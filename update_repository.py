@@ -5,6 +5,9 @@ def commit_and_push_changes():
         # Define the repository directory
         repo_dir = r"C:\Users\andre\iCloudDrive\Uni\Tercero\Proyecto\Codigo_vigas"
 
+        # Pull the latest changes from the remote repository
+        subprocess.run(["git", "pull"], check=True, cwd=repo_dir)
+        
         # Stage all changes
         subprocess.run(["git", "add", "."], check=True, cwd=repo_dir)
         
@@ -14,7 +17,7 @@ def commit_and_push_changes():
         # Push the changes to the remote repository
         subprocess.run(["git", "push"], check=True, cwd=repo_dir)
         
-        print("Changes committed and pushed successfully.")
+        print("Changes pulled, committed, and pushed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
