@@ -27,6 +27,10 @@ def update_build(inp,txt):
     global beam
     beam = build_beam(float(inp.get()))
 
-def update_supports(inp,txt):
+def update_supports(inp,txt,support):
     update(inp,txt)
-    #hola
+    if support == 1:
+        support1 = int(inp.get()*100)
+    elif support == 2:
+        support2 = int(inp.get()*100)
+    print(support1,support2)
