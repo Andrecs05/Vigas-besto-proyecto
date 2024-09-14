@@ -44,4 +44,3 @@ def update_supports(inp,txt,support):
         print(f"supp2: {supp2}")
     else:
         print("supp2 is not assigned a value.")
-    print(beam[0][supp1])
