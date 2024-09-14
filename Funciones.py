@@ -1,5 +1,6 @@
 
 import numpy as np
+import re
 
 
 def update(inp,txt):
@@ -7,8 +8,8 @@ def update(inp,txt):
     txt.config(text=newtxt)
 
 def validate_numeric_input(action, value_if_allowed):
-    if action == '1':  
-        if value_if_allowed.isdigit():
+    if action == '1': 
+        if re.match(r'^\d*\.?\d*$', value_if_allowed):
             return True
         else:
             return False
@@ -29,8 +30,18 @@ def update_build(inp,txt):
 
 def update_supports(inp,txt,support):
     update(inp,txt)
+    global supp1, supp2
     if support == 1:
-        support1 = int(inp.get()*100)
+        supp1 = int(float(inp.get())*100)
     elif support == 2:
-        support2 = int(inp.get()*100)
-    print(support1,support2)
+        supp2 = int(float(inp.get())*100)
+    if 'supp1' in globals():
+        print(f"supp1: {supp1}")
+    else:
+        print("supp1 is not assigned a value.")
+    
+    if 'supp2' in globals():
+        print(f"supp2: {supp2}")
+    else:
+        print("supp2 is not assigned a value.")
+    print(beam[0][supp1])
