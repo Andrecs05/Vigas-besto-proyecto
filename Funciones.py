@@ -9,7 +9,7 @@ def update(inp,txt):
 
 def validate_numeric_input(action, value_if_allowed):
     if action == '1': 
-        if re.match(r'^\d*\.?\d*$', value_if_allowed):
+        if re.match(r'^\d*\.?\d{0,2}$', value_if_allowed):
             return True
         else:
             return False
