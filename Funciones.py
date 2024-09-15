@@ -71,7 +71,6 @@ def point_load(pos,mag):
     global beam
     x = int(float(pos.get())*100)
     beam[1][x] -= float(mag.get())
-    print(beam[1][x])
     return beam
 
 # Funcion que ubica los momentos
