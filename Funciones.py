@@ -2,11 +2,12 @@
 import numpy as np
 import re
 
-
+# Funcion para actualizar textos
 def update(inp,txt):
     newtxt = str(inp.get())
     txt.config(text=newtxt)
 
+# Funcion para validar que la entrada sea numerica y solo dos decimales
 def validate_numeric_input(action, value_if_allowed):
     if action == '1': 
         if re.match(r'^\d*\.?\d{0,2}$', value_if_allowed):
@@ -16,6 +17,8 @@ def validate_numeric_input(action, value_if_allowed):
     else:
         return True
     
+# Funcion para construir la viga y las cargas en una matrix 2xn donde beam[0][n] es el punto en la viga y beam[1][n] es la carga en cada punto
+
 def build_beam(len):
     step = 0.01
     dom = np.arange(0, len, step)
@@ -23,10 +26,14 @@ def build_beam(len):
     beam = np.array([dom, loads])
     return beam
 
+# Funcion que llama a la funcion build_beam y update
+
 def update_build(inp,txt):
     update(inp,txt)
     global beam
     beam = build_beam(float(inp.get()))
+
+# Funcion que llama a la funcion update y ubica los soportes
 
 def update_supports(inp,txt,support):
     update(inp,txt)
@@ -35,12 +42,3 @@ def update_supports(inp,txt,support):
         supp1 = int(float(inp.get())*100)
     elif support == 2:
         supp2 = int(float(inp.get())*100)
-    if 'supp1' in globals():
-        print(f"supp1: {supp1}")
-    else:
-        print("supp1 is not assigned a value.")
-    
-    if 'supp2' in globals():
-        print(f"supp2: {supp2}")
-    else:
-        print("supp2 is not assigned a value.")
