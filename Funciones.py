@@ -1,6 +1,7 @@
 
 import numpy as np
 import re
+import matplotlib.pyplot as plt
 
 # Funcion para actualizar textos
 def update(inp,txt):
@@ -101,12 +102,39 @@ def calculate_reactions():
     
     print(R1,R2)
     return R1, R2
-    
+
+# Funcion que grafica la viga
+
+def plot_beam(beamgraph,figbeam):
+    global beam, supp1, supp2
+    figbeam.clear()
+    ax = figbeam.add_subplot(111)
+    ax.plot(beam[0], np.zeros_like(beam[0]), linewidth=5, zorder=100)
+    ax.plot([supp1/100,supp1/100],[0,-1],linewidth=3, color='red')
+    ax.plot([supp2/100,supp2/100],[0,-1],linewidth=3, color='red')
+    ax.set_ylim(-1,5.5)
+    ax.yaxis.set_visible(False) 
+
+    max = np.min(beam[1])
+
+    for i in range(len(beam[0])):
+        if beam[1][i] != 0:
+            ratio = beam[1][i]/max
+            xstart = i/100
+            ystart = 5*(ratio)+0.3
+            xcomponent = 0
+            ycomponent = -4*ratio
+            width = ratio*0.05*len(beam[0])/100
+            height = ratio
+            ax.arrow(xstart,ystart,xcomponent,ycomponent,head_width=width,head_length=height,linewidth=3, fc='k',ec='k')
+    plt.show()
+    beamgraph.draw()
 
         
 
 
 # Funcion que llama todas las funciones para calcular la viga
 
-def calculate_beam():
+def calculate_beam(beamgraph,figbeam):
     calculate_reactions()
+    plot_beam(beamgraph,figbeam)
