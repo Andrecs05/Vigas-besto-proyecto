@@ -22,13 +22,19 @@ def validate_numeric_input(action, value_if_allowed):
 # beam[0][n] es el punto en la viga
 # beam[1][n] es la carga en cada punto
 # beam[2][n] es el momento en cada punto
+# beam[3][n] es la fuerza cortante en cada punto
+# beam[4][n] es el momento flector en cada punto
 
 def build_beam(len):
-    step = 0.01
-    dom = np.arange(0, len, step)
+    global scale
+    step = 0.001
+    scale = 1/step
+    dom = np.arange(0, len+0.01, step)
     loads = np.zeros_like(dom)
     moment = np.zeros_like(dom)
-    beam = np.array([dom, loads,moment])
+    shear = np.zeros_like(dom)
+    flex = np.zeros_like(dom)
+    beam = np.array([dom, loads,moment,shear,flex])
     return beam
 
 # Funcion para desactivar los botones de los apoyos
@@ -60,32 +66,32 @@ def update_build(inp,txt):
 
 def update_supports(inp,txt,support):
     update(inp,txt)
-    global supp1, supp2
+    global supp1, supp2, scale
     if support == 1:
-        supp1 = int(float(inp.get())*100)
+        supp1 = int(float(inp.get())*scale)
     elif support == 2:
-        supp2 = int(float(inp.get())*100)
+        supp2 = int(float(inp.get())*scale)
 
 # Funcion que ubica las cargas
 
 def point_load(pos,mag):
     global beam
-    x = int(float(pos.get())*100)
+    x = int(float(pos.get())*scale)
     beam[1][x] -= float(mag.get())
     return beam
 
 # Funcion que ubica los momentos
 
 def point_moment(pos,mag):
-    global beam
-    x = int(float(pos.get())*100)
+    global beam, scale
+    x = int(float(pos.get())*scale)
     beam[2][x] += float(mag.get())
     return beam
 
 # Funcion que calcula las reacciones en los apoyos
 
 def calculate_reactions():
-    global beam, supp1, supp2, beamtype, R1, R2
+    global beam, supp1, supp2, beamtype, R1, R2, scale
     R1 = 0
     R2 = 0
     M1 = 0
@@ -95,10 +101,10 @@ def calculate_reactions():
             R1 -= beam[1][i]
     elif beamtype == 2:
         for i in range(len(beam[0])):
-            M1 += (beam[0][i]-supp1/100)*beam[1][i]
-            M2 += (beam[0][i]-supp2/100)*beam[1][i]
-            R1 = -M2/(supp1/100-supp2/100)
-            R2 = -M1/(supp2/100-supp1/100)
+            M1 += (beam[0][i]-supp1/scale)*beam[1][i]
+            M2 += (beam[0][i]-supp2/scale)*beam[1][i]
+            R1 = -M2/(supp1/scale-supp2/scale)
+            R2 = -M1/(supp2/scale-supp1/scale)
     beam[1][supp1] = R1
     beam[1][supp2] = R2
     
@@ -108,12 +114,12 @@ def calculate_reactions():
 # Funcion que grafica la viga
 
 def plot_beam(beamgraph,figbeam):
-    global beam, supp1, supp2
+    global beam, supp1, supp2, scale
     figbeam.clear()
     ax = figbeam.add_subplot(111)
     ax.plot(beam[0], np.zeros_like(beam[0]), linewidth=5, zorder=100)
-    ax.plot([supp1/100,supp1/100],[0,-1],linewidth=3, color='red')
-    ax.plot([supp2/100,supp2/100],[0,-1],linewidth=3, color='red')
+    ax.plot([supp1/scale,supp1/scale],[0,-1],linewidth=3, color='red')
+    ax.plot([supp2/scale,supp2/scale],[0,-1],linewidth=3, color='red')
     ax.set_ylim(-1,5.5)
     ax.yaxis.set_visible(False) 
 
@@ -122,11 +128,11 @@ def plot_beam(beamgraph,figbeam):
     for i in range(len(beam[0])):
         if beam[1][i] < 0:
             ratio = beam[1][i]/max
-            xstart = i/100
+            xstart = i/scale
             ystart = 5*(ratio)+0.3
             xcomponent = 0
             ycomponent = -4*ratio
-            width = ratio*0.05*len(beam[0])/100
+            width = ratio*0.05*len(beam[0])/scale
             height = ratio
             ax.arrow(xstart,ystart,xcomponent,ycomponent,head_width=width,head_length=height,linewidth=3, fc='k',ec='k')
     plt.show()
@@ -135,27 +141,31 @@ def plot_beam(beamgraph,figbeam):
     # Funcion que grafica los cortantes 
 
 def plot_shear(sheargraph,figshear):
-    global beam, shear
+    global beam
     figshear.clear()
     ax = figshear.add_subplot(111)
-    shear = np.zeros_like(beam[0])
-    shear[0] = beam[1][0]
+    beam[3][0] = beam[1][0]
     for i in range(len(beam[0])-1):
-        shear[i+1] = shear[i] + beam[1][i+1]
-    ax.plot(beam[0], shear)
-    plt.show()
+        beam[3][i+1] = beam[3][i] + beam[1][i+1]
+
+    ax.axhline(0, color='black', linewidth=1)
+    ax.plot([0,0],[0,beam[3][0]],color='blue')
+    ax.plot(beam[0], beam[3],color='blue')
+    ax.fill_between(beam[0], beam[3], 0, color='blue', alpha=0.5, interpolate=True) 
     sheargraph.draw()
 
 def plot_moment(momentgraph,figmoment):
     global beam
     figmoment.clear()
     ax = figmoment.add_subplot(111)
-    moment = np.zeros_like(beam[0])
-    moment[0] = beam[1][0] 
+    beam[4][0] = beam[1][0] 
     for i in range(len(beam[0])-1):
-        moment[i+1] = moment[i] + shear[i+1]
-    ax.plot(beam[0], moment)
-    plt.show()
+        beam[4][i+1] = beam[4][i] + beam[3][i+1]
+
+    ax.axhline(0, color='black', linewidth=1)
+    ax.plot([0,0],[0,beam[4][0]], color='orange')
+    ax.plot(beam[0], beam[4], color='orange')
+    ax.fill_between(beam[0], beam[4], 0, color='orange', alpha=0.5) 
     momentgraph.draw()
 
     
