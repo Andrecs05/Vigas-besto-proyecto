@@ -99,6 +99,8 @@ def calculate_reactions():
             M2 += (beam[0][i]-supp2/100)*beam[1][i]
             R1 = -M2/(supp1/100-supp2/100)
             R2 = -M1/(supp2/100-supp1/100)
+    beam[1][supp1] = R1
+    beam[1][supp2] = R2
     
     print(R1,R2)
     return R1, R2
@@ -118,7 +120,7 @@ def plot_beam(beamgraph,figbeam):
     max = np.min(beam[1])
 
     for i in range(len(beam[0])):
-        if beam[1][i] != 0:
+        if beam[1][i] < 0:
             ratio = beam[1][i]/max
             xstart = i/100
             ystart = 5*(ratio)+0.3
@@ -130,11 +132,40 @@ def plot_beam(beamgraph,figbeam):
     plt.show()
     beamgraph.draw()
 
+    # Funcion que grafica los cortantes 
+
+def plot_shear(sheargraph,figshear):
+    global beam, shear
+    figshear.clear()
+    ax = figshear.add_subplot(111)
+    shear = np.zeros_like(beam[0])
+    shear[0] = beam[1][0]
+    for i in range(len(beam[0])-1):
+        shear[i+1] = shear[i] + beam[1][i+1]
+    ax.plot(beam[0], shear)
+    plt.show()
+    sheargraph.draw()
+
+def plot_moment(momentgraph,figmoment):
+    global beam
+    figmoment.clear()
+    ax = figmoment.add_subplot(111)
+    moment = np.zeros_like(beam[0])
+    moment[0] = beam[1][0] 
+    for i in range(len(beam[0])-1):
+        moment[i+1] = moment[i] + shear[i+1]
+    ax.plot(beam[0], moment)
+    plt.show()
+    momentgraph.draw()
+
+    
         
 
 
 # Funcion que llama todas las funciones para calcular la viga
 
-def calculate_beam(beamgraph,figbeam):
+def calculate_beam(beamgraph,figbeam,sheargraph,figshear,momentgraph,figmoment):
     calculate_reactions()
     plot_beam(beamgraph,figbeam)
+    plot_shear(sheargraph,figshear)
+    plot_moment(momentgraph,figmoment)
