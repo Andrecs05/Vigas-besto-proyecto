@@ -2,6 +2,7 @@
 import numpy as np
 import re
 import matplotlib.pyplot as plt
+import sympy as sp
 
 # Funcion para actualizar textos
 def update(inp,txt):
@@ -21,20 +22,22 @@ def validate_numeric_input(action, value_if_allowed):
 # Funcion para construir la viga y las cargas en una matrix 2xn donde 
 # beam[0][n] es el punto en la viga
 # beam[1][n] es la carga en cada punto
-# beam[2][n] es el momento en cada punto
-# beam[3][n] es la fuerza cortante en cada punto
-# beam[4][n] es el momento flector en cada punto
+# beam[2][n] es la carga distribuida en cada punto
+# beam[3][n] es el momento en cada punto
+# beam[4][n] es la fuerza cortante en cada punto
+# beam[5][n] es el momento flector en cada punto
 
 def build_beam(len):
     global scale, step
-    step = 0.001
+    step = 0.01
     scale = 1/step
-    dom = np.arange(0, len, step)
+    dom = np.arange(0, len+step, step)
     loads = np.zeros_like(dom)
+    distloads = np.zeros_like(dom)
     moment = np.zeros_like(dom)
     shear = np.zeros_like(dom)
     flex = np.zeros_like(dom)
-    beam = np.array([dom, loads,moment,shear,flex])
+    beam = np.array([dom, loads, distloads, moment,shear,flex])
     return beam
 
 # Funcion para desactivar los botones de los apoyos
@@ -77,7 +80,7 @@ def update_supports(inp,txt,support):
 
 def point_load(pos,mag):
     global beam, scale
-    x = int(float(pos.get())*scale)-1
+    x = int(float(pos.get())*scale)
     beam[1][x] -= float(mag.get())
     return beam
 
@@ -86,9 +89,22 @@ def point_load(pos,mag):
 def point_moment(pos,mag):
     global beam, scale
     x = int(float(pos.get())*scale)
-    beam[2][x] += float(mag.get())
-    print(beam[2][x])
+    beam[3][x] += float(mag.get())
     return beam
+
+# Funcion que ubica las cargas distribuidas
+
+def distributed_load(start, end, mag):
+    global beam, scale
+    xstart = int(float(start.get())*scale)
+    xend = int(float(end.get())*scale)
+    x = sp.symbols('x')
+    equation = sp.sympify(mag.get())
+
+    for i in range(xstart,xend):
+        beam[2][i] -= equation.subs(x,i*step)
+    return beam
+        
 
 # Funcion que calcula las reacciones en los apoyos
 
@@ -105,11 +121,11 @@ def calculate_reactions():
             R1 -= beam[1][i]
         print(R1,MR)
         beam[1][supp1] = R1
-        beam[2][supp1] = MR
+        beam[3][supp1] = MR
     elif beamtype == 2:
         for i in range(len(beam[0])):
-            M1 += (beam[0][i]-supp1/scale)*beam[1][i]+beam[2][i]
-            M2 += (beam[0][i]-supp2/scale)*beam[1][i]+beam[2][i]
+            M1 += (beam[0][i]-supp1/scale)*beam[1][i]+beam[3][i]
+            M2 += (beam[0][i]-supp2/scale)*beam[1][i]+beam[3][i]
             R1 = -M2/(supp1/scale-supp2/scale)
             R2 = -M1/(supp2/scale-supp1/scale)
         print(R1,R2)
@@ -158,21 +174,21 @@ def plot_shear(sheargraph,figshear):
     global beam
     figshear.clear()
     ax = figshear.add_subplot(111)
-    beam[3][0] = beam[1][0]
+    beam[4][0] = beam[1][0]
     for i in range(len(beam[0])-1):
-        beam[3][i+1] = beam[3][i] + beam[1][i+1]
+        beam[4][i+1] = beam[4][i] + beam[1][i+1]
 
-    max_shear = np.max(np.abs(beam[3]))
-    max_shear_pos = beam[0][np.argmax(np.abs(beam[3]))]
+    max_shear = beam[4][np.argmax(np.abs(beam[4]))]
+    max_shear_pos = beam[0][np.argmax(np.abs(beam[4]))]
 
     ax.axhline(0, color='black', linewidth=1)
-    ax.plot([0,0],[0,beam[3][0]],color='blue')
-    ax.plot(beam[0], beam[3],color='blue')
+    ax.plot([0,0],[0,beam[4][0]],color='blue')
+    ax.plot(beam[0], beam[4],color='blue')
     ax.title.set_text('Fuerzas cortantes')
-    ax.set_xlabel('Posicion (mm)')
+    ax.set_xlabel('Posicion (m)')
     ax.set_ylabel('Fuerza cortante (N)')
-    ax.fill_between(beam[0], beam[3], 0, color='blue', alpha=0.5, interpolate=True) 
-    ax.plot(max_shear_pos, max_shear, 'r*', markersize=10, label=f'Fuerza cortante máxima: {max_shear} N')
+    ax.fill_between(beam[0], beam[4], 0, color='blue', alpha=0.5, interpolate=True) 
+    ax.plot(max_shear_pos, max_shear, 'r*', markersize=10, label=f'Fuerza cortante máxima: {round(max_shear,2)} N')
     ax.legend()
     sheargraph.draw()
     plt.show()
@@ -181,24 +197,26 @@ def plot_moment(momentgraph,figmoment):
     global beam, scale, step
     figmoment.clear()
     ax = figmoment.add_subplot(111)
-    beam[4][0] = step*beam[1][0] - beam[2][0]
+    beam[5][0] = step*beam[1][0] - beam[3][0]
     for i in range(len(beam[0])-1):
-        beam[4][i+1] = beam[4][i] + step*beam[3][i+1] - beam[2][i+1]
+        beam[5][i+1] = beam[5][i] + step*beam[4][i+1] - beam[3][i+1]
 
-    max_moment = -max(np.abs(beam[4]))
-    max_moment_pos = beam[0][np.argmax(np.abs(beam[4]))]
+    max_moment = beam[5][np.argmax(np.abs(beam[5]))]
+    max_moment_pos = beam[0][np.argmax(np.abs(beam[5]))]
 
     ax.axhline(0, color='black', linewidth=1)
-    ax.plot([0,0],[0,beam[4][0]], color='orange')
-    ax.plot(beam[0], beam[4], color='orange')
+    ax.plot([0,0],[0,beam[5][0]], color='orange')
+    ax.plot(beam[0], beam[5], color='orange')
     ax.title.set_text('Momento flector')
-    ax.set_xlabel('Posicion (mm)')
-    ax.set_ylabel('Momento flector (Nmm)')
-    ax.fill_between(beam[0], beam[4], 0, color='orange', alpha=0.5) 
-    ax.plot(max_moment_pos, max_moment, 'r*', markersize=10, label=f'Momento flexor máximo: {max_moment} Nmm')
+    ax.set_xlabel('Posicion (m)')
+    ax.set_ylabel('Momento flector (Nm)')
+    ax.fill_between(beam[0], beam[5], 0, color='orange', alpha=0.5) 
+    ax.plot(max_moment_pos, max_moment, 'r*', markersize=10, label=f'Momento flexor máximo: {round(max_moment,2)} Nm')
     ax.legend()
     momentgraph.draw()
     plt.show()
+
+
 
     
         
