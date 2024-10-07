@@ -101,8 +101,8 @@ def distributed_load(start, end, mag):
     x = sp.symbols('x')
     equation = sp.sympify(mag.get())
 
-    for i in range(xstart,xend):
-        beam[2][i] -= equation.subs(x,i*step)
+    for i in range(0,xend-xstart+1):
+        beam[2][i+xstart] -= equation.subs(x,i*step)
     return beam
         
 
@@ -117,18 +117,17 @@ def calculate_reactions():
     MR = 0
     if beamtype == 1:
         for i in range(len(beam[0])):
-            MR -= beam[0][i]*beam[1][i]
-            R1 -= beam[1][i]
+            MR -= beam[0][i]*(beam[1][i]+beam[2][i])
+            R1 -= beam[1][i]+beam[2][i]
         print(R1,MR)
         beam[1][supp1] = R1
         beam[3][supp1] = MR
     elif beamtype == 2:
         for i in range(len(beam[0])):
-            M1 += (beam[0][i]-supp1/scale)*beam[1][i]+beam[3][i]
-            M2 += (beam[0][i]-supp2/scale)*beam[1][i]+beam[3][i]
+            M1 += (beam[0][i]-supp1/scale)*(beam[1][i]+beam[2][i]) + beam[3][i]
+            M2 += (beam[0][i]-supp2/scale)*(beam[1][i]+beam[2][i]) + beam[3][i]
             R1 = -M2/(supp1/scale-supp2/scale)
             R2 = -M1/(supp2/scale-supp1/scale)
-        print(R1,R2)
         beam[1][supp1] = R1
         beam[1][supp2] = R2
    
@@ -153,11 +152,14 @@ def plot_beam(beamgraph,figbeam):
     ax.set_ylim(-1,5.5)
     ax.yaxis.set_visible(False) 
 
-    max = np.min(beam[1])
+    maxpoint = np.min(beam[1])
+    maxdist = np.min(beam[2])
+    truemax = min(maxpoint,maxdist)
+    sizing  = 5/abs(truemax)
 
     for i in range(len(beam[0])):
         if beam[1][i] < 0:
-            ratio = beam[1][i]/max
+            ratio = beam[1][i]/truemax
             xstart = i/scale
             ystart = 5*(ratio)+0.3
             xcomponent = 0
@@ -165,6 +167,7 @@ def plot_beam(beamgraph,figbeam):
             width = ratio*0.05*len(beam[0])/scale
             height = ratio
             ax.arrow(xstart,ystart,xcomponent,ycomponent,head_width=width,head_length=height,linewidth=3, fc='k',ec='k')
+    ax.plot(beam[0], -beam[2]*sizing, color='blue')
     plt.show()
     beamgraph.draw()
 
