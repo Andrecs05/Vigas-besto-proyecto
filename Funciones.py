@@ -36,6 +36,8 @@ def validate_numeric_input_more_decimals(action, value_if_allowed):
 # beam[3][n] es el momento en cada punto
 # beam[4][n] es la fuerza cortante en cada punto
 # beam[5][n] es el momento flector en cada punto
+# beam[6][n] es la inclinacion en cada punto
+# beam[7][n] es la deflexion en cada punto
 
 def build_beam(len):
     global scale, step
@@ -47,7 +49,9 @@ def build_beam(len):
     moment = np.zeros_like(dom)
     shear = np.zeros_like(dom)
     flex = np.zeros_like(dom)
-    beam = np.array([dom, loads, distloads, moment,shear,flex])
+    slope = np.zeros_like(dom)
+    deflection = np.zeros_like(dom)
+    beam = np.array([dom, loads, distloads, moment, shear, flex, slope, deflection])
     return beam
 
 # Funcion para desactivar los botones de los apoyos
@@ -186,12 +190,12 @@ def plot_beam(beamgraph,figbeam):
     # Funcion que grafica los cortantes 
 
 def plot_shear(sheargraph,figshear):
-    global beam
+    global beam, step
     figshear.clear()
     ax = figshear.add_subplot(111)
-    beam[4][0] = beam[1][0] + beam[2][0]
+    beam[4][0] = step*beam[1][0] + beam[2][0]
     for i in range(len(beam[0])-1):
-        beam[4][i+1] = beam[4][i] + beam[1][i+1] + beam[2][i+1]
+        beam[4][i+1] = beam[4][i] + step*beam[1][i+1] + step*beam[2][i+1]
 
     max_shear = beam[4][np.argmax(np.abs(beam[4]))]
     max_shear_pos = beam[0][np.argmax(np.abs(beam[4]))]
@@ -206,13 +210,12 @@ def plot_shear(sheargraph,figshear):
     ax.plot(max_shear_pos, max_shear, 'r*', markersize=10, label=f'Fuerza cortante máxima: {round(max_shear,2)} N')
     ax.legend()
     sheargraph.draw()
-    plt.show()
 
 def plot_moment(momentgraph,figmoment):
     global beam, scale, step
     figmoment.clear()
     ax = figmoment.add_subplot(111)
-    beam[5][0] = step*beam[1][0] - beam[3][0]
+    beam[5][0] = step*beam[1][0] - step*beam[3][0]
     for i in range(len(beam[0])-1):
         beam[5][i+1] = beam[5][i] + step*beam[4][i+1] - beam[3][i+1]
 
@@ -229,7 +232,6 @@ def plot_moment(momentgraph,figmoment):
     ax.plot(max_moment_pos, max_moment, 'r*', markersize=10, label=f'Momento flexor máximo: {round(max_moment,2)} Nm')
     ax.legend()
     momentgraph.draw()
-    plt.show()
 
 def add_youngs_modulus(inp):
     global E
@@ -239,16 +241,68 @@ def add_inertia(inp):
     global I
     I = float(inp.get())
 
+def plot_slope(slopegraph,figslope):
+    global beam, E, I, scale, step
+    figslope.clear()
+    ax = figslope.add_subplot(111)
+    beam[6][0] = beam[5][0]/(E*I)
+    for i in range(len(beam[0])-1):
+        beam[6][i+1] = beam[6][i] + step*beam[5][i+1]/(E*I)
 
-
+    max_slope = beam[6][np.argmax(np.abs(beam[6]))]
+    max_slope_pos = beam[0][np.argmax(np.abs(beam[6]))]
     
-        
+    ax.axhline(0, color='black', linewidth=1)
+    ax.plot([0,0],[0,beam[6][0]], color='green')
+    ax.plot(beam[0], beam[6], color='green')
+    ax.title.set_text('Inclinación de la viga')
+    ax.set_xlabel('Posicion (m)')
+    ax.set_ylabel('Inclinación (rad)')
+    ax.fill_between(beam[0], beam[6], 0, color='green', alpha=0.5)
+    ax.plot(max_slope_pos, max_slope, 'r*', markersize=10, label=f'Inclinación máxima: {round(max_slope,2)} rad')
+    slopegraph.draw()
 
+def plot_deflection(deflectiongraph,figdeflection):
+    global beam, E, I, scale, step
+    figdeflection.clear()
+    ax = figdeflection.add_subplot(111)
+    beam[7][0] = beam[6][0]
+    for i in range(len(beam[0])-1):
+        beam[7][i+1] = beam[7][i] + step*beam[6][i+1]
+    
+    max_deflection = beam[7][np.argmax(np.abs(beam[7]))]
+    max_deflection_pos = beam[0][np.argmax(np.abs(beam[7]))]
+
+    ax.axhline(0, color='black', linewidth=1)
+    ax.plot([0,0],[0,beam[7][0]], color='purple')
+    ax.plot(beam[0], beam[7], color='purple')
+    ax.title.set_text('Deflexión de la viga')
+    ax.set_xlabel('Posicion (m)')
+    ax.set_ylabel('Deflexión (m)')
+    ax.fill_between(beam[0], beam[7], 0, color='purple', alpha=0.5)
+    ax.plot(max_deflection_pos, max_deflection, 'r*', markersize=10, label=f'Deflexión máxima: {round(max_deflection,2)} m')
+    deflectiongraph.draw()
 
 # Funcion que llama todas las funciones para calcular la viga
 
-def calculate_beam(beamgraph,figbeam,sheargraph,figshear,momentgraph,figmoment):
+def calculate_beam(beamgraph,figbeam,sheargraph,figshear,momentgraph,
+figmoment,slopegraph,figslope,deflectiongraph,figdeflection):
+    global beam
+    beam[4] = np.zeros_like(beam[0])
+    beam[5] = np.zeros_like(beam[0])
+    beam[6] = np.zeros_like(beam[0])
+    beam[7] = np.zeros_like(beam[0])
     calculate_reactions()
     plot_beam(beamgraph,figbeam)
     plot_shear(sheargraph,figshear)
     plot_moment(momentgraph,figmoment)
+    plot_slope(slopegraph,figslope)
+    plot_deflection(deflectiongraph,figdeflection)
+
+def reset_all(entries,figures):
+    global beam
+    beam = build_beam(0)
+    for entry in entries:
+        entry.delete(0,'end')
+    for figure in figures:
+        figure.clear()
