@@ -259,7 +259,7 @@ def plot_slope(slopegraph,figslope):
     ax.set_xlabel('Posicion (m)')
     ax.set_ylabel('Inclinación (rad)')
     ax.fill_between(beam[0], beam[6], 0, color='green', alpha=0.5)
-    ax.plot(max_slope_pos, max_slope, 'r*', markersize=10, label=f'Inclinación máxima: {round(max_slope,2)} rad')
+    ax.plot(max_slope_pos, max_slope, 'r*', markersize=10, label=f'Inclinación máxima: {max_slope} rad')
     ax.legend()
     slopegraph.draw()
 
