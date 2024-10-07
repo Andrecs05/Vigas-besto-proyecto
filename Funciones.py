@@ -18,6 +18,16 @@ def validate_numeric_input(action, value_if_allowed):
             return False
     else:
         return True
+
+# Funcion para validar que la entrada sea numerica con más decimales
+def validate_numeric_input_more_decimals(action, value_if_allowed):
+    if action == '1': 
+        if re.match(r'^-?\d*\.?\d*$', value_if_allowed):
+            return True
+        else:
+            return False
+    else:
+        return True
     
 # Funcion para construir la viga y las cargas en una matrix 2xn donde 
 # beam[0][n] es el punto en la viga
@@ -102,7 +112,8 @@ def distributed_load(start, end, mag):
     equation = sp.sympify(mag.get())
 
     for i in range(0,xend-xstart+1):
-        beam[2][i+xstart] -= equation.subs(x,i*step)
+        pos = i+xstart
+        beam[2][pos] -= equation.subs(x,i*step)
     return beam
         
 
@@ -168,6 +179,7 @@ def plot_beam(beamgraph,figbeam):
             height = ratio
             ax.arrow(xstart,ystart,xcomponent,ycomponent,head_width=width,head_length=height,linewidth=3, fc='k',ec='k')
     ax.plot(beam[0], -beam[2]*sizing, color='blue')
+    ax.fill_between(beam[0], -beam[2]*sizing, 0, color='blue', alpha=0.5, interpolate=True)
     plt.show()
     beamgraph.draw()
 
@@ -177,9 +189,9 @@ def plot_shear(sheargraph,figshear):
     global beam
     figshear.clear()
     ax = figshear.add_subplot(111)
-    beam[4][0] = beam[1][0]
+    beam[4][0] = beam[1][0] + beam[2][0]
     for i in range(len(beam[0])-1):
-        beam[4][i+1] = beam[4][i] + beam[1][i+1]
+        beam[4][i+1] = beam[4][i] + beam[1][i+1] + beam[2][i+1]
 
     max_shear = beam[4][np.argmax(np.abs(beam[4]))]
     max_shear_pos = beam[0][np.argmax(np.abs(beam[4]))]
@@ -218,6 +230,14 @@ def plot_moment(momentgraph,figmoment):
     ax.legend()
     momentgraph.draw()
     plt.show()
+
+def add_youngs_modulus(inp):
+    global E
+    E = float(inp.get())
+
+def add_inertia(inp):
+    global I
+    I = float(inp.get())
 
 
 
