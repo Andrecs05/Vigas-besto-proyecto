@@ -132,11 +132,11 @@ def calculate_reactions():
     MR = 0
     if beamtype == 1:
         for i in range(len(beam[0])):
-            MR -= beam[0][i]*(beam[1][i]+beam[2][i])
+            MR -= beam[0][i]*(beam[1][i]-beam[2][i]) + beam[3][i]
             R1 -= beam[1][i]+beam[2][i]
-        print(R1,MR)
-        beam[1][supp1] = R1
-        beam[3][supp1] = MR
+        beam[1][0] = R1
+        beam[3][0] = MR
+        print(R1, MR)
     elif beamtype == 2:
         for i in range(len(beam[0])):
             M1 += (beam[0][i]-supp1/scale)*(beam[1][i]+beam[2][i]) + beam[3][i]
@@ -193,7 +193,7 @@ def plot_shear(sheargraph,figshear):
     global beam, step
     figshear.clear()
     ax = figshear.add_subplot(111)
-    beam[4][0] = step*beam[1][0] + beam[2][0]
+    beam[4][0] = beam[1][0] + beam[2][0]
     for i in range(len(beam[0])-1):
         beam[4][i+1] = beam[4][i] + step*beam[1][i+1] + step*beam[2][i+1]
 
@@ -215,7 +215,7 @@ def plot_moment(momentgraph,figmoment):
     global beam, scale, step
     figmoment.clear()
     ax = figmoment.add_subplot(111)
-    beam[5][0] = step*beam[1][0] - step*beam[3][0]
+    beam[5][0] = beam[1][0] - beam[3][0]
     for i in range(len(beam[0])-1):
         beam[5][i+1] = beam[5][i] + step*beam[4][i+1] - beam[3][i+1]
 
@@ -260,6 +260,7 @@ def plot_slope(slopegraph,figslope):
     ax.set_ylabel('Inclinación (rad)')
     ax.fill_between(beam[0], beam[6], 0, color='green', alpha=0.5)
     ax.plot(max_slope_pos, max_slope, 'r*', markersize=10, label=f'Inclinación máxima: {round(max_slope,2)} rad')
+    ax.legend()
     slopegraph.draw()
 
 def plot_deflection(deflectiongraph,figdeflection):
@@ -281,6 +282,7 @@ def plot_deflection(deflectiongraph,figdeflection):
     ax.set_ylabel('Deflexión (m)')
     ax.fill_between(beam[0], beam[7], 0, color='purple', alpha=0.5)
     ax.plot(max_deflection_pos, max_deflection, 'r*', markersize=10, label=f'Deflexión máxima: {round(max_deflection,2)} m')
+    ax.legend()
     deflectiongraph.draw()
 
 # Funcion que llama todas las funciones para calcular la viga
