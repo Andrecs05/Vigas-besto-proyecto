@@ -139,12 +139,15 @@ def calculate_reactions():
         print(R1, MR)
     elif beamtype == 2:
         for i in range(len(beam[0])):
-            M1 += (beam[0][i]-supp1/scale)*(beam[1][i]+beam[2][i]) + beam[3][i]
-            M2 += (beam[0][i]-supp2/scale)*(beam[1][i]+beam[2][i]) + beam[3][i]
+            M1 += (beam[0][i]-supp1/scale)*(beam[1][i]+step*beam[2][i]) + beam[3][i]
+            M2 += (beam[0][i]-supp2/scale)*(beam[1][i]+step*beam[2][i]) + beam[3][i]
             R1 = -M2/(supp1/scale-supp2/scale)
             R2 = -M1/(supp2/scale-supp1/scale)
         beam[1][supp1] = R1
         beam[1][supp2] = R2
+        beam[2][supp1] = 0
+        beam[2][supp2] = 0
+        print(R1, R2)
    
     
     
@@ -195,7 +198,7 @@ def plot_shear(sheargraph,figshear):
     ax = figshear.add_subplot(111)
     beam[4][0] = beam[1][0] + beam[2][0]
     for i in range(len(beam[0])-1):
-        beam[4][i+1] = beam[4][i] + step*beam[1][i+1] + step*beam[2][i+1]
+        beam[4][i+1] = beam[4][i] + beam[1][i+1] + step*beam[2][i+1]
 
     max_shear = beam[4][np.argmax(np.abs(beam[4]))]
     max_shear_pos = beam[0][np.argmax(np.abs(beam[4]))]
@@ -215,7 +218,7 @@ def plot_moment(momentgraph,figmoment):
     global beam, scale, step
     figmoment.clear()
     ax = figmoment.add_subplot(111)
-    beam[5][0] = beam[1][0] - beam[3][0]
+    beam[5][0] = step*beam[1][0] - beam[3][0]
     for i in range(len(beam[0])-1):
         beam[5][i+1] = beam[5][i] + step*beam[4][i+1] - beam[3][i+1]
 
@@ -259,7 +262,7 @@ def plot_slope(slopegraph,figslope):
     ax.set_xlabel('Posicion (m)')
     ax.set_ylabel('Inclinación (rad)')
     ax.fill_between(beam[0], beam[6], 0, color='green', alpha=0.5)
-    ax.plot(max_slope_pos, max_slope, 'r*', markersize=10, label=f'Inclinación máxima: {max_slope} rad')
+    ax.plot(max_slope_pos, max_slope, 'r*', markersize=10, label=f'Inclinación máxima: {round(max_slope,2)} rad')
     ax.legend()
     slopegraph.draw()
 
