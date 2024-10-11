@@ -132,8 +132,8 @@ def calculate_reactions():
     MR = 0
     if beamtype == 1:
         for i in range(len(beam[0])):
-            MR -= beam[0][i]*(beam[1][i]-beam[2][i]) + beam[3][i]
-            R1 -= beam[1][i]+beam[2][i]
+            MR -= beam[0][i] * (beam[1][i] + step * beam[2][i]) + beam[3][i]
+            R1 -= beam[1][i]+step*beam[2][i]
         beam[1][0] = R1
         beam[3][0] = MR
         print(R1, MR)
@@ -193,7 +193,7 @@ def plot_beam(beamgraph,figbeam):
     # Funcion que grafica los cortantes 
 
 def plot_shear(sheargraph,figshear):
-    global beam, step
+    global beam, step, max_shear, max_shear_pos
     figshear.clear()
     ax = figshear.add_subplot(111)
     beam[4][0] = beam[1][0] + beam[2][0]
@@ -215,7 +215,7 @@ def plot_shear(sheargraph,figshear):
     sheargraph.draw()
 
 def plot_moment(momentgraph,figmoment):
-    global beam, scale, step
+    global beam, scale, step, max_moment, max_moment_pos
     figmoment.clear()
     ax = figmoment.add_subplot(111)
     beam[5][0] = step*beam[1][0] - beam[3][0]
@@ -244,49 +244,84 @@ def add_inertia(inp):
     global I
     I = float(inp.get())
 
-def plot_slope(slopegraph,figslope):
-    global beam, E, I, scale, step
+def plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection):
+    global beam, E, I, scale, step, beamtype, supp2, supp1
     figslope.clear()
-    ax = figslope.add_subplot(111)
+    ax_slope = figslope.add_subplot(111)
+
+    figdeflection.clear()
+    ax_deflection = figdeflection.add_subplot(111)
+
     beam[6][0] = beam[5][0]/(E*I)
     for i in range(len(beam[0])-1):
         beam[6][i+1] = beam[6][i] + step*beam[5][i+1]/(E*I)
+    
+    beam[7][0] = beam[6][0]
+    for i in range(len(beam[0])-1):
+        beam[7][i+1] = beam[7][i] + step*beam[6][i+1]
+
+    if beamtype == 1:
+        c1 = -beam[6][0]
+        c2 = -beam[7][0]
+    
+    elif beamtype == 2:
+        c1 = (beam[7][supp2]-beam[7][supp1])/(supp1/scale-supp2/scale)
+        c2 = -beam[7][supp1]/(E*I) - c1*supp1/scale
+
+    for i in range(len(beam[0])):
+        beam[6][i] += c1
+        beam[7][i] += c1*beam[0][i] + c2
 
     max_slope = beam[6][np.argmax(np.abs(beam[6]))]
     max_slope_pos = beam[0][np.argmax(np.abs(beam[6]))]
     
-    ax.axhline(0, color='black', linewidth=1)
-    ax.plot([0,0],[0,beam[6][0]], color='green')
-    ax.plot(beam[0], beam[6], color='green')
-    ax.title.set_text('Inclinación de la viga')
-    ax.set_xlabel('Posicion (m)')
-    ax.set_ylabel('Inclinación (rad)')
-    ax.fill_between(beam[0], beam[6], 0, color='green', alpha=0.5)
-    ax.plot(max_slope_pos, max_slope, 'r*', markersize=10, label=f'Inclinación máxima: {round(max_slope,2)} rad')
-    ax.legend()
+    ax_slope.axhline(0, color='black', linewidth=1)
+    ax_slope.plot([0,0],[0,beam[6][0]], color='green')
+    ax_slope.plot(beam[0], beam[6], color='green')
+    ax_slope.title.set_text('Inclinación de la viga')
+    ax_slope.set_xlabel('Posicion (m)')
+    ax_slope.set_ylabel('Inclinación (rad)')
+    ax_slope.fill_between(beam[0], beam[6], 0, color='green', alpha=0.5)
+    ax_slope.plot(max_slope_pos, max_slope, 'r*', markersize=10, label=f'Inclinación máxima: {max_slope} rad')
+    ax_slope.legend()
     slopegraph.draw()
 
-def plot_deflection(deflectiongraph,figdeflection):
-    global beam, E, I, scale, step
-    figdeflection.clear()
-    ax = figdeflection.add_subplot(111)
-    beam[7][0] = beam[6][0]
-    for i in range(len(beam[0])-1):
-        beam[7][i+1] = beam[7][i] + step*beam[6][i+1]
-    
     max_deflection = beam[7][np.argmax(np.abs(beam[7]))]
     max_deflection_pos = beam[0][np.argmax(np.abs(beam[7]))]
 
-    ax.axhline(0, color='black', linewidth=1)
-    ax.plot([0,0],[0,beam[7][0]], color='purple')
-    ax.plot(beam[0], beam[7], color='purple')
-    ax.title.set_text('Deflexión de la viga')
-    ax.set_xlabel('Posicion (m)')
-    ax.set_ylabel('Deflexión (m)')
-    ax.fill_between(beam[0], beam[7], 0, color='purple', alpha=0.5)
-    ax.plot(max_deflection_pos, max_deflection, 'r*', markersize=10, label=f'Deflexión máxima: {round(max_deflection,2)} m')
-    ax.legend()
+    ax_deflection.axhline(0, color='black', linewidth=1)
+    ax_deflection.plot([0,0],[0,beam[7][0]], color='purple')
+    ax_deflection.plot(beam[0], beam[7], color='purple')
+    ax_deflection.title.set_text('Deflexión de la viga')
+    ax_deflection.set_xlabel('Posicion (m)')
+    ax_deflection.set_ylabel('Deflexión (m)')
+    ax_deflection.fill_between(beam[0], beam[7], 0, color='purple', alpha=0.5)
+    ax_deflection.plot(max_deflection_pos, max_deflection, 'r*', markersize=10, label=f'Deflexión máxima: {max_deflection} m')
+    ax_deflection.legend()
     deflectiongraph.draw()
+
+# Funcion para calcular el esfuerzo de von Mises
+
+def von_mises_stress(sy,inp1,inp2,inp3):
+    global max_moment, max_moment_pos, max_shear, max_shear_pos, I
+    c = float(inp1.get())
+    Q = float(inp2.get())
+    t = float(inp3.get())
+
+    tau_xy1 = (beam[4][max_moment_pos]*Q)/(I*t)
+    sigma_x1 = max_moment*c/I
+    sigma_y1 = 0
+    vm1 = np.sqrt(sigma_x1**2 - sigma_x1*sigma_y1 + sigma_y1**2 + 3*tau_xy1**2)
+
+    tau_xy2 = (max_shear*Q)/(I*t)
+    sigma_x2 = beam[5][max_shear_pos]*c/I
+    sigma_y2 = 0
+    vm2 = np.sqrt(sigma_x2**2 - sigma_x2*sigma_y2 + sigma_y2**2 + 3*tau_xy2**2)
+
+    if vm1 > vm2:
+        print(f'El esfuerzo de von Mises máximo es {vm1} Pa')
+    else:
+        print(f'El esfuerzo de von Mises máximo es {vm2} Pa')
 
 # Funcion que llama todas las funciones para calcular la viga
 
@@ -301,8 +336,7 @@ figmoment,slopegraph,figslope,deflectiongraph,figdeflection):
     plot_beam(beamgraph,figbeam)
     plot_shear(sheargraph,figshear)
     plot_moment(momentgraph,figmoment)
-    plot_slope(slopegraph,figslope)
-    plot_deflection(deflectiongraph,figdeflection)
+    plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection)
 
 def reset_all(entries,figures):
     global beam
