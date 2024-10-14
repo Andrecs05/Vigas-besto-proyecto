@@ -3,6 +3,8 @@ import numpy as np
 import re
 import matplotlib.pyplot as plt
 import sympy as sp
+import tkinter as tk
+from tkinter import ttk
 
 # Funcion para actualizar textos
 def update(inp,txt):
@@ -19,38 +21,30 @@ def validate_numeric_input(action, value_if_allowed):
     else:
         return True
 
-# Funcion para validar que la entrada sea numerica con más decimales
+# Funcion para validar que la entrada sea numerica
 def validate_numeric_input_more_decimals(action, value_if_allowed):
     if action == '1': 
         if re.match(r'^-?\d*\.?\d*$', value_if_allowed):
             return True
         else:
-            return False
+            return False    
     else:
         return True
     
-# Funcion para construir la viga y las cargas en una matrix 2xn donde 
-# beam[0][n] es el punto en la viga
-# beam[1][n] es la carga en cada punto
-# beam[2][n] es la carga distribuida en cada punto
-# beam[3][n] es el momento en cada punto
-# beam[4][n] es la fuerza cortante en cada punto
-# beam[5][n] es el momento flector en cada punto
-# beam[6][n] es la inclinacion en cada punto
-# beam[7][n] es la deflexion en cada punto
+# Funcion para construir la viga y las cargas en una matrix 2xn donde n es la cantidad de puntos en la viga
 
 def build_beam(len):
     global scale, step
     step = 0.01
     scale = 1/step
-    dom = np.arange(0, len+step, step)
-    loads = np.zeros_like(dom)
-    distloads = np.zeros_like(dom)
-    moment = np.zeros_like(dom)
-    shear = np.zeros_like(dom)
-    flex = np.zeros_like(dom)
-    slope = np.zeros_like(dom)
-    deflection = np.zeros_like(dom)
+    dom = np.arange(0, len+step, step)  # beam[0][n] es el punto en la viga
+    loads = np.zeros_like(dom)          # beam[1][n] es la carga puntual en cada punto
+    distloads = np.zeros_like(dom)      # beam[2][n] es la carga distribuida en cada punto
+    moment = np.zeros_like(dom)         # beam[3][n] es el momento en cada punto
+    shear = np.zeros_like(dom)          # beam[4][n] es la fuerza cortante en cada punto
+    flex = np.zeros_like(dom)           # beam[5][n] es el momento flector en cada punto
+    slope = np.zeros_like(dom)          # beam[6][n] es la inclinacion en cada punto
+    deflection = np.zeros_like(dom)     # beam[7][n] es la deflexion en cada punto
     beam = np.array([dom, loads, distloads, moment, shear, flex, slope, deflection])
     return beam
 
@@ -92,23 +86,27 @@ def update_supports(inp,txt,support):
 
 # Funcion que ubica las cargas
 
-def point_load(pos,mag):
+def point_load(pos,mag,cargas):
     global beam, scale
     x = int(float(pos.get())*scale)
     beam[1][x] -= float(mag.get())
+    carga = 'Carga de '+mag.get()+' N en '+pos.get()+' m'
+    cargas.insert(tk.END,carga)
     return beam
 
 # Funcion que ubica los momentos
 
-def point_moment(pos,mag):
+def point_moment(pos,mag,cargas):
     global beam, scale
     x = int(float(pos.get())*scale)
     beam[3][x] += float(mag.get())
+    momento = 'Momento de '+mag.get()+' Nm en '+pos.get()+' m'
+    cargas.insert(tk.END,momento)
     return beam
 
 # Funcion que ubica las cargas distribuidas
 
-def distributed_load(start, end, mag):
+def distributed_load(start, end, mag, cargas):
     global beam, scale
     xstart = int(float(start.get())*scale)
     xend = int(float(end.get())*scale)
@@ -118,6 +116,8 @@ def distributed_load(start, end, mag):
     for i in range(0,xend-xstart+1):
         pos = i+xstart
         beam[2][pos] -= equation.subs(x,i*step)
+    cargadis = 'Carga distribuida de '+mag.get()+' N/m entre '+start.get()+' m y '+end.get()+' m'
+    cargas.insert(tk.END, cargadis)
     return beam
         
 
@@ -244,6 +244,22 @@ def add_inertia(inp):
     global I
     I = float(inp.get())
 
+def add_neutral_axis_distance(inp):
+    global c
+    c = float(inp.get())
+
+def add_thickness(inp):
+    global t
+    t = float(inp.get())
+
+def add_first_moment_area(inp):
+    global Q
+    Q = float(inp.get())
+
+def add_yield_strength(inp):
+    global sy
+    sy = float(inp.get())
+
 def plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection):
     global beam, E, I, scale, step, beamtype, supp2, supp1
     figslope.clear()
@@ -302,31 +318,35 @@ def plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection):
 
 # Funcion para calcular el esfuerzo de von Mises
 
-def von_mises_stress(sy,inp1,inp2,inp3):
-    global max_moment, max_moment_pos, max_shear, max_shear_pos, I
-    c = float(inp1.get())
-    Q = float(inp2.get())
-    t = float(inp3.get())
+def von_mises_stress():
+    global max_moment, max_moment_pos, max_shear, max_shear_pos, I, c, t, Q, sy, scale
 
-    tau_xy1 = (beam[4][max_moment_pos]*Q)/(I*t)
+    tau_xy1 = np.max(np.abs(beam[4]))*Q/(I*t)
     sigma_x1 = max_moment*c/I
     sigma_y1 = 0
     vm1 = np.sqrt(sigma_x1**2 - sigma_x1*sigma_y1 + sigma_y1**2 + 3*tau_xy1**2)
 
     tau_xy2 = (max_shear*Q)/(I*t)
-    sigma_x2 = beam[5][max_shear_pos]*c/I
+    sigma_x2 = np.max(np.abs(beam[5]))*c/I
     sigma_y2 = 0
     vm2 = np.sqrt(sigma_x2**2 - sigma_x2*sigma_y2 + sigma_y2**2 + 3*tau_xy2**2)
 
     if vm1 > vm2:
-        print(f'El esfuerzo de von Mises máximo es {vm1} Pa')
+        vmm = vm1
     else:
-        print(f'El esfuerzo de von Mises máximo es {vm2} Pa')
+        vmm = vm2
+    
+    if vmm > sy:
+        return(f'La viga falla con un esfuerzo de von Mises de {vmm} Pa')
+    else:
+        fs = sy/vmm
+        return(f'La viga es segura con un factor de seguridad de {round(fs,2)}')
+
 
 # Funcion que llama todas las funciones para calcular la viga
 
 def calculate_beam(beamgraph,figbeam,sheargraph,figshear,momentgraph,
-figmoment,slopegraph,figslope,deflectiongraph,figdeflection):
+figmoment,slopegraph,figslope,deflectiongraph,figdeflection, results):
     global beam
     beam[4] = np.zeros_like(beam[0])
     beam[5] = np.zeros_like(beam[0])
@@ -337,6 +357,8 @@ figmoment,slopegraph,figslope,deflectiongraph,figdeflection):
     plot_shear(sheargraph,figshear)
     plot_moment(momentgraph,figmoment)
     plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection)
+    Factor_o_falla = von_mises_stress()
+    results.config(text=Factor_o_falla)
 
 def reset_all(entries,figures):
     global beam
@@ -345,3 +367,4 @@ def reset_all(entries,figures):
         entry.delete(0,'end')
     for figure in figures:
         figure.clear()
+        figure.draw()
