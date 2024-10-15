@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import sympy as sp
 import tkinter as tk
 from tkinter import ttk
+import math
 
 # Funcion para actualizar textos
 def update(inp,txt):
@@ -35,7 +36,8 @@ def validate_numeric_input_more_decimals(action, value_if_allowed):
 
 def build_beam(len):
     global scale, step
-    step = 0.01
+    order = math.floor(math.log10(len))
+    step = 10 ** (order-4)
     scale = 1/step
     dom = np.arange(0, len+step, step)  # beam[0][n] es el punto en la viga
     loads = np.zeros_like(dom)          # beam[1][n] es la carga puntual en cada punto
@@ -196,7 +198,7 @@ def plot_shear(sheargraph,figshear):
     global beam, step, max_shear, max_shear_pos
     figshear.clear()
     ax = figshear.add_subplot(111)
-    beam[4][0] = beam[1][0] + beam[2][0]
+    beam[4][0] = beam[1][0] + step*beam[2][0]
     for i in range(len(beam[0])-1):
         beam[4][i+1] = beam[4][i] + beam[1][i+1] + step*beam[2][i+1]
 
@@ -212,13 +214,19 @@ def plot_shear(sheargraph,figshear):
     ax.fill_between(beam[0], beam[4], 0, color='blue', alpha=0.5, interpolate=True) 
     ax.plot(max_shear_pos, max_shear, 'r*', markersize=10, label=f'Fuerza cortante máxima: {round(max_shear,2)} N')
     ax.legend()
+    ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     sheargraph.draw()
 
 def plot_moment(momentgraph,figmoment):
-    global beam, scale, step, max_moment, max_moment_pos
+    global beam, scale, step, max_moment, max_moment_pos, beamtype
     figmoment.clear()
     ax = figmoment.add_subplot(111)
-    beam[5][0] = step*beam[1][0] - beam[3][0]
+    if beamtype == 1:
+        beam[5][0] = -beam[3][0]
+
+    if beamtype == 2:
+        beam[5][0] = step*beam[1][0] - beam[3][0]
+
     for i in range(len(beam[0])-1):
         beam[5][i+1] = beam[5][i] + step*beam[4][i+1] - beam[3][i+1]
 
@@ -234,6 +242,7 @@ def plot_moment(momentgraph,figmoment):
     ax.fill_between(beam[0], beam[5], 0, color='orange', alpha=0.5) 
     ax.plot(max_moment_pos, max_moment, 'r*', markersize=10, label=f'Momento flexor máximo: {round(max_moment,2)} Nm')
     ax.legend()
+    ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     momentgraph.draw()
 
 def add_youngs_modulus(inp):
@@ -300,6 +309,7 @@ def plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection):
     ax_slope.fill_between(beam[0], beam[6], 0, color='green', alpha=0.5)
     ax_slope.plot(max_slope_pos, max_slope, 'r*', markersize=10, label=f'Inclinación máxima: {max_slope} rad')
     ax_slope.legend()
+    ax_slope.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     slopegraph.draw()
 
     max_deflection = beam[7][np.argmax(np.abs(beam[7]))]
@@ -314,6 +324,7 @@ def plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection):
     ax_deflection.fill_between(beam[0], beam[7], 0, color='purple', alpha=0.5)
     ax_deflection.plot(max_deflection_pos, max_deflection, 'r*', markersize=10, label=f'Deflexión máxima: {max_deflection} m')
     ax_deflection.legend()
+    ax_deflection.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     deflectiongraph.draw()
 
 # Funcion para calcular el esfuerzo de von Mises
