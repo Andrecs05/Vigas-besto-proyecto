@@ -6,6 +6,7 @@ import sympy as sp
 import tkinter as tk
 from tkinter import ttk
 import math
+import matplotlib.patches as patches
 
 # Funcion para actualizar textos
 def update(inp,txt):
@@ -54,7 +55,7 @@ def build_beam(len):
 
 def update_disable(inp,txt,type,apoyo1,apoyo2,apo1button,apo2button):
     update(inp,txt)
-    global beamtype, supp1
+    global beamtype, supp1, supp2
     if type.get() == 'Cantilever':
         apoyo1.config(state='disabled')
         apoyo2.config(state='disabled')
@@ -62,6 +63,7 @@ def update_disable(inp,txt,type,apoyo1,apoyo2,apo1button,apo2button):
         apo2button.config(state='disabled')
         beamtype = 1
         supp1 = 0
+        supp2 = 0
     else:
         apoyo1.config(state='normal')
         apoyo2.config(state='normal')
@@ -127,19 +129,20 @@ def distributed_load(start, end, mag, cargas):
 
 def calculate_reactions():
     global beam, supp1, supp2, beamtype, R1, R2, MR, scale
-    R1 = 0
-    R2 = 0
-    M1 = 0
-    M2 = 0
-    MR = 0
-    if beamtype == 1:
+    R1 = 0 #Reaccion en el apoyo 1
+    R2 = 0 #Reaccion en el apoyo 2
+    M1 = 0 #Momento en el apoyo 1
+    M2 = 0 #Momento en el apoyo 2
+    MR = 0 #Momento respecto al empotramiento
+
+    if beamtype == 1:    #Si la viga es empotrada
         for i in range(len(beam[0])):
-            MR -= beam[0][i] * (beam[1][i] + step * beam[2][i]) + beam[3][i]
-            R1 -= beam[1][i]+step*beam[2][i]
+            MR -= beam[0][i] * (beam[1][i] + step * beam[2][i]) + beam[3][i]  #Sumatoria de momentos respecto al empotramiento
+            R1 -= beam[1][i]+step*beam[2][i] #Sumatoria de cargas
         beam[1][0] = R1
         beam[3][0] = MR
-        print(R1, MR)
-    elif beamtype == 2:
+
+    elif beamtype == 2: #Si la viga es apoyada
         for i in range(len(beam[0])):
             M1 += (beam[0][i]-supp1/scale)*(beam[1][i]+step*beam[2][i]) + beam[3][i]
             M2 += (beam[0][i]-supp2/scale)*(beam[1][i]+step*beam[2][i]) + beam[3][i]
@@ -149,10 +152,7 @@ def calculate_reactions():
         beam[1][supp2] = R2
         beam[2][supp1] = 0
         beam[2][supp2] = 0
-        print(R1, R2)
-   
-    
-    
+       
     return R1, R2,  MR
 
 # Funcion que grafica la viga
@@ -162,33 +162,78 @@ def plot_beam(beamgraph,figbeam):
     figbeam.clear()
     ax = figbeam.add_subplot(111)
     if beamtype == 1:
-        ax.plot([0,0],[5,-1],linewidth=5, color='gray', zorder=101)
+        ax.plot([0,0],[5,-5],linewidth=5, color='gray', zorder=0)
         
     elif beamtype == 2:
-        ax.plot([supp1/scale,supp1/scale],[0,-1],linewidth=3, color='red')
-        ax.plot([supp2/scale,supp2/scale],[0,-1],linewidth=3, color='red')
+        ax.plot([supp1/scale,supp1/scale],[0,-1],linewidth=3, color='red',zorder = 0)
+        ax.plot([supp2/scale,supp2/scale],[0,-1],linewidth=3, color='red',zorder = 0)
         
-    ax.plot(beam[0], np.zeros_like(beam[0]), linewidth=5, zorder=100)
-    ax.set_ylim(-1,5.5)
+    ax.plot(beam[0], np.zeros_like(beam[0]), linewidth=5, zorder=1)
+    ax.set_ylim(-5.5,5.5)
     ax.yaxis.set_visible(False) 
 
-    maxpoint = np.min(beam[1])
-    maxdist = np.min(beam[2])
-    truemax = min(maxpoint,maxdist)
+    maxpoint = np.max(abs(beam[1]))
+    maxdist = np.max(abs(beam[2]))
+    truemax = max(maxpoint,maxdist)
     sizing  = 5/abs(truemax)
 
     for i in range(len(beam[0])):
-        if beam[1][i] < 0:
-            ratio = beam[1][i]/truemax
+        if beam[1][i] != 0:
+            ratio = abs(beam[1][i]/truemax)
             xstart = i/scale
-            ystart = 5*(ratio)+0.3
+
+            if i == supp1 or i == supp2:
+                ystart = -5*(ratio)-0.3
+                ycomponent = 4*ratio
+                color = 'r'
+            else:
+                ystart = 5*(ratio)+0.3
+                ycomponent = -4*ratio
+                color = 'k'
+
             xcomponent = 0
-            ycomponent = -4*ratio
-            width = ratio*0.05*len(beam[0])/scale
+            
+            width = ratio*0.025*len(beam[0])/scale
             height = ratio
-            ax.arrow(xstart,ystart,xcomponent,ycomponent,head_width=width,head_length=height,linewidth=3, fc='k',ec='k')
+            ax.arrow(xstart,ystart,xcomponent,ycomponent,head_width=width,head_length=height,linewidth=3, fc=color,ec=color)
+
     ax.plot(beam[0], -beam[2]*sizing, color='blue')
     ax.fill_between(beam[0], -beam[2]*sizing, 0, color='blue', alpha=0.5, interpolate=True)
+
+    max_moment = beam[3][np.argmax(np.abs(beam[3]))]
+
+    for i in range(len(beam[0])):
+        if beam[3][i] != 0:
+            ratio = abs(beam[3][i]/max_moment)
+            x = i
+            y = 0
+            center = (x/scale, y)
+            radiusy = ratio
+            radiusx = ratio*0.05*len(beam[0])/scale
+
+            if beam[3][i] > 0:
+                theta1 = 270
+                theta2 = 180
+                arrow_start = (x/scale-radiusx, 0)
+                arrow_end = (x/scale-radiusx, -0.5)
+            else:
+                theta1 = 0
+                theta2 = 270
+                arrow_start = (x/scale+radiusx, 0)
+                arrow_end = (x/scale+radiusx, -0.5)
+
+            if beamtype == 1 and i == 0:
+                color = 'red'
+            else:
+                color = 'black'
+            
+            semicircle = patches.Arc(center, 2*radiusx, 2*radiusy, angle=0, theta1=theta1, theta2=theta2, edgecolor=color,zorder = 101)
+            ax.add_patch(semicircle)
+
+            arrow = patches.FancyArrowPatch(arrow_start, arrow_end, mutation_scale=15, color='red',zorder=102)
+            ax.add_patch(arrow)
+
+
     plt.show()
     beamgraph.draw()
 
