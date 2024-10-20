@@ -241,9 +241,12 @@ def plot_beam(beamgraph,figbeam):
 
 def plot_shear(sheargraph,figshear):
     global beam, step, max_shear, max_shear_pos
+
     figshear.clear()
     ax = figshear.add_subplot(111)
+
     beam[4][0] = beam[1][0] + step*beam[2][0]
+
     for i in range(len(beam[0])-1):
         beam[4][i+1] = beam[4][i] + beam[1][i+1] + step*beam[2][i+1]
 
@@ -264,13 +267,15 @@ def plot_shear(sheargraph,figshear):
 
 def plot_moment(momentgraph,figmoment):
     global beam, scale, step, max_moment, max_moment_pos, beamtype
+
     figmoment.clear()
     ax = figmoment.add_subplot(111)
+
     if beamtype == 1:
         beam[5][0] = -beam[3][0]
 
     if beamtype == 2:
-        beam[5][0] = step*beam[1][0] - beam[3][0]
+        beam[5][0] = step*beam[4][0] - beam[3][0]
 
     for i in range(len(beam[0])-1):
         beam[5][i+1] = beam[5][i] + step*beam[4][i+1] - beam[3][i+1]
@@ -316,6 +321,7 @@ def add_yield_strength(inp):
 
 def plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection):
     global beam, E, I, scale, step, beamtype, supp2, supp1
+
     figslope.clear()
     ax_slope = figslope.add_subplot(111)
 
@@ -377,13 +383,13 @@ def plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection):
 def von_mises_stress():
     global max_moment, max_moment_pos, max_shear, max_shear_pos, I, c, t, Q, sy, scale
 
-    tau_xy1 = np.max(np.abs(beam[4]))*Q/(I*t)
+    tau_xy1 = beam[4][max_moment_pos]*Q/(I*t)
     sigma_x1 = max_moment*c/I
     sigma_y1 = 0
     vm1 = np.sqrt(sigma_x1**2 - sigma_x1*sigma_y1 + sigma_y1**2 + 3*tau_xy1**2)
 
     tau_xy2 = (max_shear*Q)/(I*t)
-    sigma_x2 = np.max(np.abs(beam[5]))*c/I
+    sigma_x2 =beam[5][max_shear_pos]*c/I
     sigma_y2 = 0
     vm2 = np.sqrt(sigma_x2**2 - sigma_x2*sigma_y2 + sigma_y2**2 + 3*tau_xy2**2)
 
@@ -393,7 +399,7 @@ def von_mises_stress():
         vmm = vm2
     
     if vmm > sy:
-        return(f'La viga falla con un esfuerzo de von Mises de {vmm} Pa')
+        return(f'La viga falla con un esfuerzo de von Mises de {round(vmm),2} Pa')
     else:
         fs = sy/vmm
         return(f'La viga es segura con un factor de seguridad de {round(fs,2)}')
