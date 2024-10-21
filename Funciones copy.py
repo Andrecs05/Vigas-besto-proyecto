@@ -85,12 +85,14 @@ def update_supports(inp,support,datos):
         support_text = 'Apoyo 2 en '+inp.get()+' m'
     datos.insert(tk.END,support_text)
 
-# Funcion que ubica las cargas
+# Funcion que ubica las cargas puntuales
 def point_load(pos,mag,datos):
     global beam, scale
     x = int(float(pos.get())*scale)
     beam[1][x] -= float(mag.get())
     carga = 'Carga de '+mag.get()+' N en '+pos.get()+' m'
+    pos.delete(0,'end')
+    mag.delete(0,'end')
     datos.insert(tk.END,carga)
     return beam
 
@@ -101,6 +103,8 @@ def point_moment(pos,mag,datos):
     beam[3][x] += float(mag.get())
     momento = 'Momento de '+mag.get()+' Nm en '+pos.get()+' m'
     datos.insert(tk.END,momento)
+    pos.delete(0,'end')
+    mag.delete(0,'end')
     return beam
 
 # Funcion que ubica las cargas distribuidas
@@ -116,9 +120,11 @@ def distributed_load(start, end, mag, datos):
         beam[2][pos] -= equation.subs(x,i*step)
     cargadis = 'Carga distribuida de '+mag.get()+' N/m entre '+start.get()+' m y '+end.get()+' m'
     datos.insert(tk.END, cargadis)
+    start.delete(0,'end')
+    end.delete(0,'end')
+    mag.delete(0,'end')
     return beam
         
-
 # Funcion que calcula las reacciones en los apoyos
 def calculate_reactions():
     global beam, supp1, supp2, beamtype, R1, R2, MR, scale
@@ -152,11 +158,13 @@ def plot_beam(beamgraph,figbeam):
     figbeam.clear()
     ax = figbeam.add_subplot(111)
     if beamtype == 1:
-        ax.plot([0,0],[5,-5],linewidth=5, color='gray', zorder=0)
+        ax.plot([0,0],[5,-5],linewidth=5, color='gray', label=f'Reacción de {R1} N', zorder=0)
+        ax.plot([0,0],[5,-5],linewidth=5, color='gray', label=f'Reacción de {MR} Nm', zorder=0)
         
     elif beamtype == 2:
-        ax.plot([supp1/scale,supp1/scale],[0,-1],linewidth=3, color='red',zorder = 0)
-        ax.plot([supp2/scale,supp2/scale],[0,-1],linewidth=3, color='red',zorder = 0)
+        ax.plot([supp1/scale,supp1/scale],[0,-1],linewidth=3, color='red', label=f'Reacción de {R1} N', zorder = 0)
+        ax.plot([supp2/scale,supp2/scale],[0,-1],linewidth=3, color='orange', label=f'Reacción de {R2} N', zorder = 0)
+        ax.legend()
         
     ax.plot(beam[0], np.zeros_like(beam[0]), linewidth=5, zorder=1)
     ax.set_ylim(-1,5.5)
@@ -403,7 +411,7 @@ def von_mises_stress():
         vmm = vm2
     
     if vmm > sy:
-        return(f'La viga falla con un esfuerzo de von Mises de {round(vmm),2} Pa')
+        return(f'La viga falla con un esfuerzo de von Mises de {round(vmm*10**-6,2)} MPa')
     else:
         fs = sy/vmm
         return(f'La viga es segura con un factor de seguridad de {round(fs,2)}')
@@ -423,13 +431,3 @@ figmoment,slopegraph,figslope,deflectiongraph,figdeflection, results):
     plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection)
     Factor_o_falla = von_mises_stress()
     results.config(text=Factor_o_falla)
-
-# Funcion para resetear todas las entradas y las figuras
-def reset_all(entries,figures):
-    global beam
-    beam = build_beam(0)
-    for entry in entries:
-        entry.delete(0,'end')
-    for figure in figures:
-        figure.clear()
-        figure.draw()
