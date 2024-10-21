@@ -61,7 +61,7 @@ def update_disable(inp,txt,type,apoyo1,apoyo2,apo1button,apo2button):
         apoyo2.config(state='disabled')
         apo1button.config(state='disabled')
         apo2button.config(state='disabled')
-        beamtype = 1
+        beamtype = 1 #Viga empotrada
         supp1 = 0
         supp2 = 0
     else:
@@ -69,7 +69,7 @@ def update_disable(inp,txt,type,apoyo1,apoyo2,apo1button,apo2button):
         apoyo2.config(state='normal')
         apo1button.config(state='normal')
         apo2button.config(state='normal')
-        beamtype = 2
+        beamtype = 2 #Viga apoyada
 
 # Funcion que llama a la funcion build_beam y update
 
