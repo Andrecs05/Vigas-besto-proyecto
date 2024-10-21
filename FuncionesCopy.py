@@ -192,10 +192,14 @@ def plot_beam(beamgraph,figbeam):
         ax.plot([0,0],[5,-5],linewidth=5, color='gray', label=f'Reacción de {MR} Nm', zorder=0)
         
     elif beamtype == 2:
-        ax.plot([supp1/scale,supp1/scale],[0,-1],linewidth=3, color='red', label=f'Reacción de {R1} N', zorder = 0)
-        ax.plot([supp2/scale,supp2/scale],[0,-1],linewidth=3, color='orange', label=f'Reacción de {R2} N', zorder = 0)
-        ax.legend()
+        support1 = plt.Polygon([[supp1/scale-0.5,-1],[supp1/scale+0.5,-1],[supp1/scale,0]],closed=True,fill=True,edgecolor='black',facecolor='gray', label=f'Reacción de {R1} N')
+        ax.add_patch(support1)
+        support2 = plt.Polygon([[supp2/scale-0.5,-1],[supp2/scale+0.5,-1],[supp2/scale,0]],closed=True,fill=True,edgecolor='black',facecolor='gray', label=f'Reacción de {R1} N')
+        ax.add_patch(support2)
         
+        ax.legend()
+    
+    
     ax.plot(beam['x_coordinate'], np.zeros_like(beam['x_coordinate']), linewidth=5, zorder=1)
     ax.set_ylim(-1,5.5)
     ax.yaxis.set_visible(False) 
@@ -254,6 +258,8 @@ def plot_beam(beamgraph,figbeam):
 
             arrow = patches.FancyArrowPatch(arrow_start, arrow_end, mutation_scale=15, color='red',zorder=102)
             ax.add_patch(arrow)
+    ax.xlabel = 'Posicion (m)'
+    ax.title.set_text('Diagrama de la viga')
 
 
     plt.show()
