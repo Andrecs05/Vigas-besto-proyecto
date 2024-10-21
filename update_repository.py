@@ -6,7 +6,6 @@ def commit_and_push_changes():
     try:
         # Get the current user's username
         username = getpass.getuser()
-        print(f"Your username is: {username}")
 
         # Define the repository directory based on the username
         if username == "andre":
