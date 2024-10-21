@@ -10,7 +10,7 @@ def commit_and_push_changes():
         # Define the repository directory based on the username
         if username == "andre":
             repo_dir = r"C:\Users\andre\iCloudDrive\Uni\Tercero\Proyecto\Codigo_vigas"
-        elif username == "Mel":
+        elif username == "melan":
             repo_dir = r"C:\Users\melan\OneDrive\Documentos\Experimental2_Sismómetro\TareaResistencia_AnálisisVigas\Vigas-besto-proyecto"
         else:
             raise Exception(f"Unknown user: {username}")
