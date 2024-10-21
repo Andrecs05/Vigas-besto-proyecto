@@ -42,18 +42,20 @@ def build_beam(inp,datos):
     step = 10 ** (order-4)
     scale = 1/step
     
-    dom = np.arange(0, len+step, step)  # beam[0][n] es el punto en la viga
-    loads = np.zeros_like(dom)          # beam[1][n] es la carga puntual en cada punto
-    distloads = np.zeros_like(dom)      # beam[2][n] es la carga distribuida en cada punto
-    moment = np.zeros_like(dom)         # beam[3][n] es el momento en cada punto
-    shear = np.zeros_like(dom)          # beam[4][n] es la fuerza cortante en cada punto
-    flex = np.zeros_like(dom)           # beam[5][n] es el momento flector en cada punto
-    slope = np.zeros_like(dom)          # beam[6][n] es la inclinacion en cada punto
-    deflection = np.zeros_like(dom)     # beam[7][n] es la deflexion en cada punto
-    beam = np.array([dom, loads, distloads, moment, shear, flex, slope, deflection])
-    longitud = 'Longitud de la viga: '+str(len)+' m'
+    # Crear la viga como un diccionario con las propiedades de la viga
+    beam = {}
+    beam['x_coordinate'] = np.arange(0, len+step, step) 
+    beam['point_loads'] = np.zeros_like(beam['x_coordinate'])         
+    beam['distributed_loads'] = np.zeros_like(beam['x_coordinate'])      
+    beam['point_moment'] = np.zeros_like(beam['x_coordinate'])        
+    beam['shear'] = np.zeros_like(beam['x_coordinate'])        
+    beam['bending_moment'] = np.zeros_like(beam['x_coordinate'])           
+    beam['slope'] = np.zeros_like(beam['x_coordinate'])          
+    beam['deflection'] = np.zeros_like(beam['x_coordinate'])     
 
-    datos.insert(tk.END,longitud)       # Introducir la longitud de la viga en el cuadro de datos
+    # Introducir la longitud de la viga en el cuadro de datos
+    longitud = 'Longitud de la viga: '+str(len)+' m'
+    datos.insert(tk.END,longitud)       
 
 # Funcion para definir el tipo de viga y desactivar los botones de los apoyos si es empotrada
 def type_disable(type,apoyo1,apoyo2,apo1button,apo2button,datos):
@@ -96,14 +98,14 @@ def point_load(pos,mag,datos):
 
     # Ubicar la carga ingresada por el usuario en la viga
     x = int(float(pos.get())*scale) 
-    beam[1][x] -= float(mag.get())
+    beam['point_loads'][x] -= float(mag.get())
 
     # Limpiar las entradas de las cargas puntuales
     pos.delete(0,'end')    
     mag.delete(0,'end')
 
     # Introducir la carga puntual en el cuadro de datos
-    carga = 'Carga de '+mag.get()+' N en '+pos.get()+' m'
+    carga = 'Carga de '+str(beam['point_loads'][x])+' N en '+str(x*step)+' m'
     datos.insert(tk.END,carga)
     return beam
 
@@ -113,14 +115,14 @@ def point_moment(pos,mag,datos):
 
     # Ubicar el momento ingresado por el usuario en la viga
     x = int(float(pos.get())*scale)
-    beam[3][x] += float(mag.get())
+    beam['point_moment'][x] += float(mag.get())
 
     # Limpiar las entradas de los momentos puntuales
     pos.delete(0,'end')
     mag.delete(0,'end')
 
     # Introducir el momento puntual en el cuadro de datos
-    momento = 'Momento de '+mag.get()+' Nm en '+pos.get()+' m'
+    momento = 'Momento de '+str(beam['point_moment'][x])+' Nm en '+str(x*step)+' m'
     datos.insert(tk.END,momento)
     return beam
 
@@ -137,7 +139,7 @@ def distributed_load(start, end, mag, datos):
     # Evaluar la expresión en cada punto del intervalo y sumarla a la viga
     for i in range(0,xend-xstart+1):
         pos = i+xstart
-        beam[2][pos] -= equation.subs(x,i*step)
+        beam['distributed_loads'][pos] -= equation.subs(x,i*step)
 
     # Limpiar las entradas de las cargas distribuidas
     start.delete(0,'end')
@@ -145,7 +147,7 @@ def distributed_load(start, end, mag, datos):
     mag.delete(0,'end')
 
     # Introducir la carga distribuida en el cuadro de datos
-    cargadis = 'Carga distribuida de '+mag.get()+' N/m entre '+start.get()+' m y '+end.get()+' m'
+    cargadis = 'Carga distribuida de '+str(equation)+' N/m entre '+str(xstart*step)+' m y '+str(xend*step)+' m'
     datos.insert(tk.END, cargadis)
     return beam
         
@@ -161,22 +163,22 @@ def calculate_reactions():
     if beamtype == 1:    #Si la viga es empotrada
         # Se calcula el momento respecto al empotramiento y 
         # la sumatoria de cargas para definir las reacciones
-        for i in range(len(beam[0])):
-            MR -= beam[0][i] * (beam[1][i] + step * beam[2][i]) + beam[3][i]  
-            R1 -= beam[1][i]+step*beam[2][i] 
-        beam[1][0] = R1
-        beam[3][0] = MR
+        for i in range(len(beam['x_coordinate'])):
+            MR -= beam['x_coordinate'][i] * (beam['point_loads'][i] + step * beam['distributed_loads'][i]) + beam['point_moment'][i]  
+            R1 -= beam['point_loads'][i]+step*beam['distributed_loads'][i] 
+        beam['point_loads'][0] = R1
+        beam['point_moment'][0] = MR
 
     elif beamtype == 2: #Si la viga es apoyada
         # Se calculan los momentos en los apoyos y se 
         # despejan las reacciones de la sumatoria de momentos
-        for i in range(len(beam[0])):
-            M1 += (beam[0][i]-supp1/scale)*(beam[1][i]+step*beam[2][i]) + beam[3][i]
-            M2 += (beam[0][i]-supp2/scale)*(beam[1][i]+step*beam[2][i]) + beam[3][i]
+        for i in range(len(beam['x_coordinate'])):
+            M1 += (beam['x_coordinate'][i]-supp1/scale)*(beam['point_loads'][i]+step*beam['distributed_loads'][i]) + beam['point_moment'][i]
+            M2 += (beam['x_coordinate'][i]-supp2/scale)*(beam['point_loads'][i]+step*beam['distributed_loads'][i]) + beam['point_moment'][i]
             R1 = -M2/(supp1/scale-supp2/scale)
             R2 = -M1/(supp2/scale-supp1/scale)
-        beam[1][supp1] += R1
-        beam[1][supp2] += R2
+        beam['point_loads'][supp1] += R1
+        beam['point_loads'][supp2] += R2
        
     return R1, R2,  MR
 
@@ -194,18 +196,18 @@ def plot_beam(beamgraph,figbeam):
         ax.plot([supp2/scale,supp2/scale],[0,-1],linewidth=3, color='orange', label=f'Reacción de {R2} N', zorder = 0)
         ax.legend()
         
-    ax.plot(beam[0], np.zeros_like(beam[0]), linewidth=5, zorder=1)
+    ax.plot(beam['x_coordinate'], np.zeros_like(beam['x_coordinate']), linewidth=5, zorder=1)
     ax.set_ylim(-1,5.5)
     ax.yaxis.set_visible(False) 
 
-    maxpoint = np.min(beam[1])
-    maxdist = np.min(beam[2])
+    maxpoint = np.min(beam['point_loads'])
+    maxdist = np.min(beam['distributed_loads'])
     truemax = min(maxpoint,maxdist)
     sizing  = 5/abs(truemax)
 
-    for i in range(len(beam[0])):
-        if beam[1][i] != 0 and i != supp1 and i != supp2:
-            ratio = abs(beam[1][i]/truemax)
+    for i in range(len(beam['x_coordinate'])):
+        if beam['point_loads'][i] != 0 and i != supp1 and i != supp2:
+            ratio = abs(beam['point_loads'][i]/truemax)
             xstart = i/scale
 
             ystart = 5*(ratio)+0.3
@@ -213,25 +215,25 @@ def plot_beam(beamgraph,figbeam):
             color = 'k'
             xcomponent = 0
             
-            width = ratio*0.025*len(beam[0])/scale
+            width = ratio*0.025*len(beam['x_coordinate'])/scale
             height = ratio
             ax.arrow(xstart,ystart,xcomponent,ycomponent,head_width=width,head_length=height,linewidth=3, fc=color,ec=color)
 
-    ax.plot(beam[0], -beam[2]*sizing, color='blue')
-    ax.fill_between(beam[0], -beam[2]*sizing, 0, color='blue', alpha=0.5, interpolate=True)
+    ax.plot(beam['x_coordinate'], -beam['distributed_loads']*sizing, color='blue')
+    ax.fill_between(beam['x_coordinate'], -beam['distributed_loads']*sizing, 0, color='blue', alpha=0.5, interpolate=True)
 
-    max_moment = beam[3][np.argmax(np.abs(beam[3]))]
+    max_moment = beam['point_moment'][np.argmax(np.abs(beam['point_moment']))]
 
-    for i in range(len(beam[0])):
-        if beam[3][i] != 0:
-            ratio = abs(beam[3][i]/max_moment)
+    for i in range(len(beam['x_coordinate'])):
+        if beam['point_moment'][i] != 0:
+            ratio = abs(beam['point_moment'][i]/max_moment)
             x = i
             y = 0
             center = (x/scale, y)
             radiusy = ratio
-            radiusx = ratio*0.05*len(beam[0])/scale
+            radiusx = ratio*0.05*len(beam['x_coordinate'])/scale
 
-            if beam[3][i] > 0:
+            if beam['point_moment'][i] > 0:
                 theta1 = 270
                 theta2 = 180
                 arrow_start = (x/scale-radiusx, 0)
@@ -268,24 +270,24 @@ def plot_shear(sheargraph,figshear):
     ax = figshear.add_subplot(111)
 
     # Se define el cortante en el primer punto de la viga
-    beam[4][0] = beam[1][0] + step*beam[2][0]
+    beam['shear'][0] = beam['point_loads'][0] + step*beam['distributed_loads'][0]
 
     # Se calcula el cortante integrando las cargas mediante el método de Euler
-    for i in range(len(beam[0])-1):
-        beam[4][i+1] = beam[4][i] + beam[1][i+1] + step*beam[2][i+1]
+    for i in range(len(beam['x_coordinate'])-1):
+        beam['shear'][i+1] = beam['shear'][i] + beam['point_loads'][i+1] + step*beam['distributed_loads'][i+1]
 
     # Se calcula la fuerza cortante máxima y su posición
-    max_shear = beam[4][np.argmax(np.abs(beam[4]))]
-    max_shear_pos = beam[0][np.argmax(np.abs(beam[4]))]
+    max_shear = beam['shear'][np.argmax(np.abs(beam['shear']))]
+    max_shear_pos = beam['x_coordinate'][np.argmax(np.abs(beam['shear']))]
 
     # Se grafica el cortante y el máximo
     ax.axhline(0, color='black', linewidth=1)
-    ax.plot([0,0],[0,beam[4][0]],color='blue')
-    ax.plot(beam[0], beam[4],color='blue')
+    ax.plot([0,0],[0,beam['shear'][0]],color='blue')
+    ax.plot(beam['x_coordinate'], beam['shear'],color='blue')
     ax.title.set_text('Fuerzas cortantes')
     ax.set_xlabel('Posicion (m)')
     ax.set_ylabel('Fuerza cortante (N)')
-    ax.fill_between(beam[0], beam[4], 0, color='blue', alpha=0.5, interpolate=True) 
+    ax.fill_between(beam['x_coordinate'], beam['shear'], 0, color='blue', alpha=0.5, interpolate=True) 
     ax.plot(max_shear_pos, max_shear, 'r*', markersize=10, label=f'Fuerza cortante máxima: {round(max_shear,2)} N')
     ax.legend()
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
@@ -302,27 +304,27 @@ def plot_moment(momentgraph,figmoment):
     # Se define el momento flector en el primer punto de la viga
     # segun el tipo de viga
     if beamtype == 1:
-        beam[5][0] = -beam[3][0]
+        beam['bending_moment'][0] = -beam['point_moment'][0]
 
     if beamtype == 2:
-        beam[5][0] = step*beam[4][0] - beam[3][0]
+        beam['bending_moment'][0] = step*beam['shear'][0] - beam['point_moment'][0]
 
     # Se calcula el momento flector integrando los cortantes mediante el método de Euler
-    for i in range(len(beam[0])-1):
-        beam[5][i+1] = beam[5][i] + step*beam[4][i+1] - beam[3][i+1]
+    for i in range(len(beam['x_coordinate'])-1):
+        beam['bending_moment'][i+1] = beam['bending_moment'][i] + step*beam['shear'][i+1] - beam['point_moment'][i+1]
 
     # Se calcula el momento flector máximo y su posición
-    max_moment = beam[5][np.argmax(np.abs(beam[5]))]
-    max_moment_pos = beam[0][np.argmax(np.abs(beam[5]))]
+    max_moment = beam['bending_moment'][np.argmax(np.abs(beam['bending_moment']))]
+    max_moment_pos = beam['x_coordinate'][np.argmax(np.abs(beam['bending_moment']))]
 
     # Se grafica el momento flector y el máximo
     ax.axhline(0, color='black', linewidth=1)
-    ax.plot([0,0],[0,beam[5][0]], color='orange')
-    ax.plot(beam[0], beam[5], color='orange')
+    ax.plot([0,0],[0,beam['bending_moment'][0]], color='orange')
+    ax.plot(beam['x_coordinate'], beam['bending_moment'], color='orange')
     ax.title.set_text('Momento flector')
     ax.set_xlabel('Posicion (m)')
     ax.set_ylabel('Momento flector (Nm)')
-    ax.fill_between(beam[0], beam[5], 0, color='orange', alpha=0.5) 
+    ax.fill_between(beam['x_coordinate'], beam['bending_moment'], 0, color='orange', alpha=0.5) 
     ax.plot(max_moment_pos, max_moment, 'r*', markersize=10, label=f'Momento flexor máximo: {round(max_moment,2)} Nm')
     ax.legend()
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
@@ -381,57 +383,57 @@ def plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection):
     ax_deflection = figdeflection.add_subplot(111)
 
     # Se calcula la integral y doble integral del momento en el primer punto de la viga
-    beam[6][0] = beam[5][0]/(E*I)
-    beam[7][0] = beam[6][0]
+    beam['slope'][0] = beam['bending_moment'][0]/(E*I)
+    beam['deflection'][0] = beam['slope'][0]
 
     # Se calcula ambas integrales mediante el método de Euler
-    for i in range(len(beam[0])-1):
-        beam[6][i+1] = beam[6][i] + step*beam[5][i+1]/(E*I)
+    for i in range(len(beam['x_coordinate'])-1):
+        beam['slope'][i+1] = beam['slope'][i] + step*beam['bending_moment'][i+1]/(E*I)
     
-    for i in range(len(beam[0])-1):
-        beam[7][i+1] = beam[7][i] + step*beam[6][i+1]
+    for i in range(len(beam['x_coordinate'])-1):
+        beam['deflection'][i+1] = beam['deflection'][i] + step*beam['slope'][i+1]
 
     # Se calculan las constantes de integracion para la inclinacion y la deflexion
     # segun el tipo de viga
     if beamtype == 1:
-        c1 = -beam[6][0]
-        c2 = -beam[7][0]
+        c1 = -beam['slope'][0]
+        c2 = -beam['deflection'][0]
     
     elif beamtype == 2:
-        c1 = (beam[7][supp2]-beam[7][supp1])/(supp1/scale-supp2/scale)
-        c2 = -beam[7][supp1]/(E*I) - c1*supp1/scale
+        c1 = (beam['deflection'][supp2]-beam['deflection'][supp1])/(supp1/scale-supp2/scale)
+        c2 = -beam['deflection'][supp1]/(E*I) - c1*supp1/scale
 
     # Se suman las constantes de integracion para obtener la inclinacion y la deflexion
-    for i in range(len(beam[0])):
-        beam[6][i] += c1
-        beam[7][i] += c1*beam[0][i] + c2
+    for i in range(len(beam['x_coordinate'])):
+        beam['slope'][i] += c1
+        beam['deflection'][i] += c1*beam['x_coordinate'][i] + c2
 
     # Se calcula la inclinacion y la deflexion maxima y su posicion
-    max_slope = beam[6][np.argmax(np.abs(beam[6]))]
-    max_slope_pos = beam[0][np.argmax(np.abs(beam[6]))]
-    max_deflection = beam[7][np.argmax(np.abs(beam[7]))]
-    max_deflection_pos = beam[0][np.argmax(np.abs(beam[7]))]
+    max_slope = beam['slope'][np.argmax(np.abs(beam['slope']))]
+    max_slope_pos = beam['x_coordinate'][np.argmax(np.abs(beam['slope']))]
+    max_deflection = beam['deflection'][np.argmax(np.abs(beam['deflection']))]
+    max_deflection_pos = beam['x_coordinate'][np.argmax(np.abs(beam['deflection']))]
     
     # Se grafican la inclinacion y la deflexion y sus maximos
     ax_slope.axhline(0, color='black', linewidth=1)
-    ax_slope.plot([0,0],[0,beam[6][0]], color='green')
-    ax_slope.plot(beam[0], beam[6], color='green')
+    ax_slope.plot([0,0],[0,beam['slope'][0]], color='green')
+    ax_slope.plot(beam['x_coordinate'], beam['slope'], color='green')
     ax_slope.title.set_text('Inclinación de la viga')
     ax_slope.set_xlabel('Posicion (m)')
     ax_slope.set_ylabel('Inclinación (rad)')
-    ax_slope.fill_between(beam[0], beam[6], 0, color='green', alpha=0.5)
+    ax_slope.fill_between(beam['x_coordinate'], beam['slope'], 0, color='green', alpha=0.5)
     ax_slope.plot(max_slope_pos, max_slope, 'r*', markersize=10, label=f'Inclinación máxima: {np.format_float_scientific(max_slope,precision = 2)} rad')
     ax_slope.legend()
     ax_slope.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     slopegraph.draw()   # Actualiza la interfaz grafica
 
     ax_deflection.axhline(0, color='black', linewidth=1)
-    ax_deflection.plot([0,0],[0,beam[7][0]], color='purple')
-    ax_deflection.plot(beam[0], beam[7], color='purple')
+    ax_deflection.plot([0,0],[0,beam['deflection'][0]], color='purple')
+    ax_deflection.plot(beam['x_coordinate'], beam['deflection'], color='purple')
     ax_deflection.title.set_text('Deflexión de la viga')
     ax_deflection.set_xlabel('Posicion (m)')
     ax_deflection.set_ylabel('Deflexión (m)')
-    ax_deflection.fill_between(beam[0], beam[7], 0, color='purple', alpha=0.5)
+    ax_deflection.fill_between(beam['x_coordinate'], beam['deflection'], 0, color='purple', alpha=0.5)
     ax_deflection.plot(max_deflection_pos, max_deflection, 'r*', markersize=10, label=f'Deflexión máxima: {np.format_float_scientific(max_deflection, precision = 2)    } m')
     ax_deflection.legend()
     ax_deflection.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
@@ -442,13 +444,13 @@ def von_mises_stress():
     global max_moment, max_moment_pos, max_shear, max_shear_pos, I, c, t, Q, sy, scale
 
     # Se calcula el esfuerzo de von Mises en el punto de mayor momento flector y cortante
-    tau_xy1 = beam[4][int(max_moment_pos*scale)]*Q/(I*t)
+    tau_xy1 = beam['shear'][int(max_moment_pos*scale)]*Q/(I*t)
     sigma_x1 = max_moment*c/I
     sigma_y1 = 0
     vm1 = np.sqrt(sigma_x1**2 - sigma_x1*sigma_y1 + sigma_y1**2 + 3*tau_xy1**2)
 
     tau_xy2 = (max_shear*Q)/(I*t)
-    sigma_x2 =beam[5][int(max_shear_pos*scale)]*c/I
+    sigma_x2 =beam['bending_moment'][int(max_shear_pos*scale)]*c/I
     sigma_y2 = 0
     vm2 = np.sqrt(sigma_x2**2 - sigma_x2*sigma_y2 + sigma_y2**2 + 3*tau_xy2**2)
 
@@ -470,10 +472,10 @@ figmoment,slopegraph,figslope,deflectiongraph,figdeflection, results):
     global beam
 
     # Se reinician las matrices de la viga
-    beam[4] = np.zeros_like(beam[0])
-    beam[5] = np.zeros_like(beam[0])
-    beam[6] = np.zeros_like(beam[0])
-    beam[7] = np.zeros_like(beam[0])
+    beam['shear'] = np.zeros_like(beam['x_coordinate'])
+    beam['bending_moment'] = np.zeros_like(beam['x_coordinate'])
+    beam['slope'] = np.zeros_like(beam['x_coordinate'])
+    beam['deflection'] = np.zeros_like(beam['x_coordinate'])
 
     calculate_reactions()
     plot_beam(beamgraph,figbeam)
