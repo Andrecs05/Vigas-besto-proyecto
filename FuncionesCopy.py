@@ -42,7 +42,7 @@ def build_beam(inp,datos):
     step = 10 ** (order-4)
     scale = 1/step
     
-    # Crear la viga como un diccionario con las propiedades de la viga
+    # Crear la viga con un diccionario con las propiedades de la viga
     beam = {}
     beam['x_coordinate'] = np.arange(0, len+step, step) 
     beam['point_loads'] = np.zeros_like(beam['x_coordinate'])         
