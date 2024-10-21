@@ -291,29 +291,41 @@ def plot_moment(momentgraph,figmoment):
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     momentgraph.draw()
 
-def add_youngs_modulus(inp):
+def add_youngs_modulus(inp,datos):
     global E
     E = float(inp.get())*10**6
+    young = 'Módulo de Young: '+inp.get()+' MPa'
+    datos.insert(tk.END,young)
 
-def add_inertia(inp):
+def add_inertia(inp,datos):
     global I
     I = float(inp.get())*10**-12
+    inertia = 'Inercia de la sección transversal: '+inp.get()+' m^4'
+    datos.insert(tk.END,inertia)
 
-def add_neutral_axis_distance(inp):
+def add_neutral_axis_distance(inp,datos):
     global c
     c = float(inp.get())
+    distancia = 'Distancia al eje neutro: '+inp.get()+' m'
+    datos.insert(tk.END,distancia)
 
-def add_thickness(inp):
+def add_thickness(inp,datos):
     global t
     t = float(inp.get())
+    espesor = 'Espesor de la sección transversal: '+inp.get()+' m'
+    datos.insert(tk.END,espesor)
 
-def add_first_moment_area(inp):
+def add_first_moment_area(inp,datos):
     global Q
     Q = float(inp.get())*10**-9
+    momento1 = 'Primer momento de área: '+inp.get()+' mm^3'
+    datos.insert(tk.END,momento1)
 
-def add_yield_strength(inp):
+def add_yield_strength(inp,datos):
     global sy
     sy = float(inp.get())*10**6
+    resistencia = 'Resistencia a la fluencia: '+inp.get()+' MPa'
+    datos.insert(tk.END,resistencia)
 
 def plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection):
     global beam, E, I, scale, step, beamtype, supp2, supp1
