@@ -1,12 +1,20 @@
 import subprocess
 import os
+import getpass
 
 def commit_and_push_changes():
     try:
-        # Define the repository directory
-        repo_dir = r"C:\Users\melan\OneDrive\Documentos\Experimental2_Sismómetro\TareaResistencia_AnálisisVigas\Vigas-besto-proyecto"
-        #C:\Users\andre\iCloudDrive\Uni\Tercero\Proyecto\Codigo_vigas
+        # Get the current user's username
+        username = getpass.getuser()
+        print(f"Your username is: {username}")
 
+        # Define the repository directory based on the username
+        if username == "andre":
+            repo_dir = r"C:\Users\andre\iCloudDrive\Uni\Tercero\Proyecto\Codigo_vigas"
+        elif username == "Mel":
+            repo_dir = r"C:\Users\melan\OneDrive\Documentos\Experimental2_Sismómetro\TareaResistencia_AnálisisVigas\Vigas-besto-proyecto"
+        else:
+            raise Exception(f"Unknown user: {username}")
         # Check if the directory is a Git repository
         if not os.path.isdir(os.path.join(repo_dir, ".git")):
             print(f"The directory {repo_dir} is not a Git repository. Initializing...")
