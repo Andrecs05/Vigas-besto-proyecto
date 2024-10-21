@@ -13,6 +13,9 @@ def update(inp,txt):
     newtxt = str(inp.get())
     txt.config(text=newtxt)
 
+
+
+
 # Funcion para validar que la entrada sea numerica y solo dos decimales
 def validate_numeric_input(action, value_if_allowed):
     if action == '1': 
@@ -35,8 +38,9 @@ def validate_numeric_input_more_decimals(action, value_if_allowed):
     
 # Funcion para construir la viga y las cargas en una matrix 2xn donde n es la cantidad de puntos en la viga
 
-def build_beam(len,datos):
-    global scale, step
+def build_beam(inp,datos):
+    global scale, step, beam
+    len = float(inp.get())
     order = math.floor(math.log10(len))
     step = 10 ** (order-4)
     scale = 1/step
@@ -51,12 +55,10 @@ def build_beam(len,datos):
     beam = np.array([dom, loads, distloads, moment, shear, flex, slope, deflection])
     longitud = 'Longitud de la viga: '+str(len)+' m'
     datos.insert(tk.END,longitud)
-    return beam
 
 # Funcion para desactivar los botones de los apoyos
 
-def update_disable(inp,txt,type,apoyo1,apoyo2,apo1button,apo2button):
-    update(inp,txt)
+def type_disable(type,apoyo1,apoyo2,apo1button,apo2button,datos):
     global beamtype, supp1, supp2
     if type.get() == 'Cantilever':
         apoyo1.config(state='disabled')
@@ -66,24 +68,21 @@ def update_disable(inp,txt,type,apoyo1,apoyo2,apo1button,apo2button):
         beamtype = 1 #Viga empotrada
         supp1 = 0
         supp2 = 0
+        type = 'Viga empotrada'
     else:
         apoyo1.config(state='normal')
         apoyo2.config(state='normal')
         apo1button.config(state='normal')
         apo2button.config(state='normal')
         beamtype = 2 #Viga apoyada
+        type = 'Viga apoyada'
 
-# Funcion que llama a la funcion build_beam y update
+    datos.insert(tk.END,type)
 
-def update_build(inp,txt,datos):
-    update(inp,txt)
-    global beam
-    beam = build_beam(float(inp.get()),datos)
 
 # Funcion que llama a la funcion update y ubica los soportes
 
-def update_supports(inp,txt,support,datos):
-    update(inp,txt)
+def update_supports(inp,support,datos):
     global supp1, supp2, scale
     if support == 1:
         supp1 = int(float(inp.get())*scale)
@@ -172,28 +171,22 @@ def plot_beam(beamgraph,figbeam):
         ax.plot([supp2/scale,supp2/scale],[0,-1],linewidth=3, color='red',zorder = 0)
         
     ax.plot(beam[0], np.zeros_like(beam[0]), linewidth=5, zorder=1)
-    ax.set_ylim(-5.5,5.5)
+    ax.set_ylim(-1,5.5)
     ax.yaxis.set_visible(False) 
 
-    maxpoint = np.max(abs(beam[1]))
-    maxdist = np.max(abs(beam[2]))
-    truemax = max(maxpoint,maxdist)
+    maxpoint = np.min(beam[1])
+    maxdist = np.min(beam[2])
+    truemax = min(maxpoint,maxdist)
     sizing  = 5/abs(truemax)
 
     for i in range(len(beam[0])):
-        if beam[1][i] != 0:
+        if beam[1][i] != 0 and i != supp1 and i != supp2:
             ratio = abs(beam[1][i]/truemax)
             xstart = i/scale
 
-            if i == supp1 or i == supp2:
-                ystart = -5*(ratio)-0.3
-                ycomponent = 4*ratio
-                color = 'r'
-            else:
-                ystart = 5*(ratio)+0.3
-                ycomponent = -4*ratio
-                color = 'k'
-
+            ystart = 5*(ratio)+0.3
+            ycomponent = -4*ratio
+            color = 'k'
             xcomponent = 0
             
             width = ratio*0.025*len(beam[0])/scale
