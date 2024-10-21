@@ -148,10 +148,8 @@ def calculate_reactions():
             M2 += (beam[0][i]-supp2/scale)*(beam[1][i]+step*beam[2][i]) + beam[3][i]
             R1 = -M2/(supp1/scale-supp2/scale)
             R2 = -M1/(supp2/scale-supp1/scale)
-        beam[1][supp1] = R1
-        beam[1][supp2] = R2
-        beam[2][supp1] = 0
-        beam[2][supp2] = 0
+        beam[1][supp1] += R1
+        beam[1][supp2] += R2
        
     return R1, R2,  MR
 
