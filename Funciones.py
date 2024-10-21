@@ -13,8 +13,6 @@ def update(inp,txt):
     newtxt = str(inp.get())
     txt.config(text=newtxt)
 
-#Hola!
-
 # Funcion para validar que la entrada sea numerica y solo dos decimales
 def validate_numeric_input(action, value_if_allowed):
     if action == '1': 
