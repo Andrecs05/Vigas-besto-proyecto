@@ -403,7 +403,7 @@ def von_mises_stress():
         vmm = vm2
     
     if vmm > sy:
-        return(f'La viga falla con un esfuerzo de von Mises de {round(vmm),2} Pa')
+        return(f'La viga falla con un esfuerzo de von Mises de {round(vmm,2)} Pa')
     else:
         fs = sy/vmm
         return(f'La viga es segura con un factor de seguridad de {round(fs,2)}')
