@@ -13,9 +13,6 @@ def update(inp,txt):
     newtxt = str(inp.get())
     txt.config(text=newtxt)
 
-
-
-
 # Funcion para validar que la entrada sea numerica y solo dos decimales
 def validate_numeric_input(action, value_if_allowed):
     if action == '1': 
@@ -37,7 +34,6 @@ def validate_numeric_input_more_decimals(action, value_if_allowed):
         return True
     
 # Funcion para construir la viga y las cargas en una matrix 2xn donde n es la cantidad de puntos en la viga
-
 def build_beam(inp,datos):
     global scale, step, beam
     len = float(inp.get())
@@ -57,7 +53,6 @@ def build_beam(inp,datos):
     datos.insert(tk.END,longitud)
 
 # Funcion para desactivar los botones de los apoyos
-
 def type_disable(type,apoyo1,apoyo2,apo1button,apo2button,datos):
     global beamtype, supp1, supp2
     if type.get() == 'Cantilever':
@@ -79,9 +74,7 @@ def type_disable(type,apoyo1,apoyo2,apo1button,apo2button,datos):
 
     datos.insert(tk.END,type)
 
-
 # Funcion que llama a la funcion update y ubica los soportes
-
 def update_supports(inp,support,datos):
     global supp1, supp2, scale
     if support == 1:
@@ -93,7 +86,6 @@ def update_supports(inp,support,datos):
     datos.insert(tk.END,support_text)
 
 # Funcion que ubica las cargas
-
 def point_load(pos,mag,datos):
     global beam, scale
     x = int(float(pos.get())*scale)
@@ -103,7 +95,6 @@ def point_load(pos,mag,datos):
     return beam
 
 # Funcion que ubica los momentos
-
 def point_moment(pos,mag,datos):
     global beam, scale
     x = int(float(pos.get())*scale)
@@ -113,7 +104,6 @@ def point_moment(pos,mag,datos):
     return beam
 
 # Funcion que ubica las cargas distribuidas
-
 def distributed_load(start, end, mag, datos):
     global beam, scale
     xstart = int(float(start.get())*scale)
@@ -130,7 +120,6 @@ def distributed_load(start, end, mag, datos):
         
 
 # Funcion que calcula las reacciones en los apoyos
-
 def calculate_reactions():
     global beam, supp1, supp2, beamtype, R1, R2, MR, scale
     R1 = 0 #Reaccion en el apoyo 1
@@ -158,7 +147,6 @@ def calculate_reactions():
     return R1, R2,  MR
 
 # Funcion que grafica la viga
-
 def plot_beam(beamgraph,figbeam):
     global beam, supp1, supp2, scale, beamtype
     figbeam.clear()
@@ -235,6 +223,7 @@ def plot_beam(beamgraph,figbeam):
 
     # Funcion que grafica los cortantes 
 
+# Funcion que grafica los cortantes
 def plot_shear(sheargraph,figshear):
     global beam, step, max_shear, max_shear_pos
 
@@ -261,6 +250,7 @@ def plot_shear(sheargraph,figshear):
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     sheargraph.draw()
 
+# Funcion que grafica los momentos flectores
 def plot_moment(momentgraph,figmoment):
     global beam, scale, step, max_moment, max_moment_pos, beamtype
 
@@ -291,42 +281,49 @@ def plot_moment(momentgraph,figmoment):
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     momentgraph.draw()
 
+# Funcion que agrega el modulo de Young
 def add_youngs_modulus(inp,datos):
     global E
     E = float(inp.get())*10**6
     young = 'Módulo de Young: '+inp.get()+' MPa'
     datos.insert(tk.END,young)
 
+# Funcion que agrega la inercia de la seccion transversal
 def add_inertia(inp,datos):
     global I
     I = float(inp.get())*10**-12
     inertia = 'Inercia de la sección transversal: '+inp.get()+' m^4'
     datos.insert(tk.END,inertia)
 
+# Funcion que agrega la distancia al eje neutro
 def add_neutral_axis_distance(inp,datos):
     global c
     c = float(inp.get())
     distancia = 'Distancia al eje neutro: '+inp.get()+' m'
     datos.insert(tk.END,distancia)
 
+# Funcion que agrega el espesor de la seccion transversal
 def add_thickness(inp,datos):
     global t
     t = float(inp.get())
     espesor = 'Espesor de la sección transversal: '+inp.get()+' m'
     datos.insert(tk.END,espesor)
 
+# Funcion que agrega el primer momento de area
 def add_first_moment_area(inp,datos):
     global Q
     Q = float(inp.get())*10**-9
     momento1 = 'Primer momento de área: '+inp.get()+' mm^3'
     datos.insert(tk.END,momento1)
 
+# Funcion que agrega la resistencia a la fluencia
 def add_yield_strength(inp,datos):
     global sy
     sy = float(inp.get())*10**6
     resistencia = 'Resistencia a la fluencia: '+inp.get()+' MPa'
     datos.insert(tk.END,resistencia)
 
+# Funcion que grafica la inclinacion y la deflexion
 def plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection):
     global beam, E, I, scale, step, beamtype, supp2, supp1
 
@@ -386,8 +383,7 @@ def plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection):
     ax_deflection.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     deflectiongraph.draw()
  
-# Funcion para calcular el esfuerzo de von Mises
-
+# Funcion para calcular el esfuerzo de von Mises y el factor de seguridad
 def von_mises_stress():
     global max_moment, max_moment_pos, max_shear, max_shear_pos, I, c, t, Q, sy, scale
 
@@ -412,9 +408,7 @@ def von_mises_stress():
         fs = sy/vmm
         return(f'La viga es segura con un factor de seguridad de {round(fs,2)}')
 
-
 # Funcion que llama todas las funciones para calcular la viga
-
 def calculate_beam(beamgraph,figbeam,sheargraph,figshear,momentgraph,
 figmoment,slopegraph,figslope,deflectiongraph,figdeflection, results):
     global beam
@@ -430,6 +424,7 @@ figmoment,slopegraph,figslope,deflectiongraph,figdeflection, results):
     Factor_o_falla = von_mises_stress()
     results.config(text=Factor_o_falla)
 
+# Funcion para resetear todas las entradas y las figuras
 def reset_all(entries,figures):
     global beam
     beam = build_beam(0)
