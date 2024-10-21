@@ -6,7 +6,7 @@ def commit_and_push_changes():
     try:
         # Get the current user's username
         username = getpass.getuser()
-
+ 
         # Define the repository directory based on the username
         if username == "andre":
             repo_dir = r"C:\Users\andre\iCloudDrive\Uni\Tercero\Proyecto\Codigo_vigas"
