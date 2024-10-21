@@ -4,7 +4,7 @@ import os
 def commit_and_push_changes():
     try:
         # Define the repository directory
-        repo_dir = r"C:\Users\andre\iCloudDrive\Uni\Tercero\Proyecto\Codigo_vigas"
+        repo_dir = r"C:\Users\melan\OneDrive\Documentos\Experimental2_Sismómetro\TareaResistencia_AnálisisVigas\Vigas-besto-proyecto"
         #C:\Users\andre\iCloudDrive\Uni\Tercero\Proyecto\Codigo_vigas
 
         # Check if the directory is a Git repository
