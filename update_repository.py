@@ -27,7 +27,7 @@ def commit_and_push_changes():
         subprocess.run(["git", "add", "."], check=True, cwd=repo_dir)
         
         # Commit the changes
-        subprocess.run(["git", "commit", "-m", "Automated update by {username}"], check=True, cwd=repo_dir)
+        subprocess.run(["git", "commit", "-m", f"Automated update by {username}"], check=True, cwd=repo_dir)
         
         # Push the changes to the remote repository
         subprocess.run(["git", "push"], check=True, cwd=repo_dir)
