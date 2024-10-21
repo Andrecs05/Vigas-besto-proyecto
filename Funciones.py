@@ -375,7 +375,7 @@ def plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection):
     ax_deflection.legend()
     ax_deflection.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     deflectiongraph.draw()
-
+ 
 # Funcion para calcular el esfuerzo de von Mises
 
 def von_mises_stress():
