@@ -381,13 +381,13 @@ def plot_slope_deflection(slopegraph,figslope,deflectiongraph,figdeflection):
 def von_mises_stress():
     global max_moment, max_moment_pos, max_shear, max_shear_pos, I, c, t, Q, sy, scale
 
-    tau_xy1 = beam[4][max_moment_pos]*Q/(I*t)
+    tau_xy1 = beam[4][max_moment_pos*scale]*Q/(I*t)
     sigma_x1 = max_moment*c/I
     sigma_y1 = 0
     vm1 = np.sqrt(sigma_x1**2 - sigma_x1*sigma_y1 + sigma_y1**2 + 3*tau_xy1**2)
 
     tau_xy2 = (max_shear*Q)/(I*t)
-    sigma_x2 =beam[5][max_shear_pos]*c/I
+    sigma_x2 =beam[5][max_shear_pos*scale]*c/I
     sigma_y2 = 0
     vm2 = np.sqrt(sigma_x2**2 - sigma_x2*sigma_y2 + sigma_y2**2 + 3*tau_xy2**2)
 
